@@ -1,5 +1,5 @@
 [package]
-name = "input_modules"
+name = "input_module"
 version = "0.5.0"
 authors = ["games869"]
 edition = "2018"
@@ -28,5 +28,6 @@ opt-level = 'z'
 panic = "abort"
 lto = true
 codegen-units = 1
+
 
 
