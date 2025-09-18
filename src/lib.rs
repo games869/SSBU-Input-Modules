@@ -31,11 +31,12 @@ use {
 pub mod InputModule;
 
 
-#[skyline::main(name = "libInputModules")]
+#[skyline::main(name = "input_modules")]
 pub fn main() {
 
     InputModule::install();
 	
 
 }
+
 
