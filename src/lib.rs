@@ -31,7 +31,7 @@ use {
 pub mod InputModule;
 
 pub fn test (i: i32) {
-	println!("\n{i}\n);
+	println!("\n{i}\n");
 }
 
 
@@ -42,6 +42,7 @@ pub fn main() {
 	
 
 }
+
 
 
 
