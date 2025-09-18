@@ -1,4 +1,4 @@
-#![crate_name = "input_modules"]
+#![crate_name = "input_module"]
 #![feature(
     concat_idents,
     proc_macro_hygiene
@@ -38,5 +38,6 @@ pub fn main() {
 	
 
 }
+
 
 
