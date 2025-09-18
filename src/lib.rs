@@ -30,6 +30,10 @@ use {
 
 pub mod InputModule;
 
+pub fn test (i: i32) {
+	println!("\n{i}\n);
+}
+
 
 #[skyline::main(name = "input_module")]
 pub fn main() {
@@ -38,6 +42,7 @@ pub fn main() {
 	
 
 }
+
 
 
 
