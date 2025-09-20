@@ -1,4 +1,3 @@
-#![crate_name = "input_modules"]
 #![feature(
     concat_idents,
     proc_macro_hygiene
@@ -1437,6 +1436,7 @@ pub fn main() {
     .install();
 
 }
+
 
 
 
