@@ -1420,7 +1420,7 @@ unsafe extern "C" fn reset_motion_input_module(fighter: &mut L2CFighterCommon) {
     }
 }
 
-
+#[no_mangle]
 pub fn test(i: i32) {
 	println!("i == {i}");
 }
@@ -1434,4 +1434,5 @@ pub fn main() {
     .install();
 
 }
+
 
