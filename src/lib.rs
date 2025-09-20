@@ -16,6 +16,9 @@
 	ambiguous_glob_reexports,
     hidden_glob_reexports
 )]
+
+#[macro_use]
+extern crate lazy_static;
 use {
 	smash::{
 	  lua2cpp::*,
@@ -1434,5 +1437,6 @@ pub fn main() {
     .install();
 
 }
+
 
 
