@@ -19,6 +19,7 @@ smash_singletons = { git = "https://github.com/WuBoytH/smash_singletons.git" }
 arcropolis-api = { git = "https://github.com/Raytwo/arcropolis_api" }
 the_csk_collection_api = { git = "https://github.com/Coolsonickirby/the_csk_collection_api" }
 param_config = { git = "https://github.com/csharpm7/lib_paramconfig.git"}
+lazy_static = "1.4.0"
 
 [profile.dev]
 panic = "abort"
@@ -28,3 +29,4 @@ opt-level = 'z'
 panic = "abort"
 lto = true
 codegen-units = 1
+
