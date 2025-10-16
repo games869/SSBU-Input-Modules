@@ -657,3 +657,7 @@ unsafe fn get_last_update_frame(entry_id: &usize) -> *mut i32 {
 
     ret
 }
+
+fn commit_test () -> bool {
+    true
+}
