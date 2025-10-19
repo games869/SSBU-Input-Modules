@@ -69,7 +69,7 @@ pub mod CommandInputModule;
 pub mod MotionInputModule;
 
 // A custom module that ... YOU STILL NEED TO CODE @games 
-//pub mod ChargeInputModule;
+pub mod ChargeInputModule;
 
 /*
 +_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_

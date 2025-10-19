@@ -158,15 +158,6 @@ impl fmt::Display for InputDirectionRaw {
     }
 }
 
-fn type_of<T>(_: T) -> &'static str {
-    if type_name::<T>() != "&plugin::InputModule::Command_Input_Module::InputDirection" {
-        type_name::<T>()
-    }
-    else {
-        "InputDirection"
-    }
-}
-
 /// A custom Module made to make the reading inputs easier
 
     /// returns the general direction of where the control stick is in with fighting game style inputs
@@ -732,7 +723,7 @@ unsafe fn get_specific_charge_time(module_accessor:*mut BattleObjectModuleAccess
 }
 
 
-unsafe extern "C" fn command_input_frame(fighter: &mut L2CFighterCommon) {
+pub unsafe fn update_is_perfect(fighter: &mut L2CFighterCommon) {
 
     let entry_id = WorkModule::get_int(fighter.module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let dir = get_stick_dir(fighter.module_accessor);

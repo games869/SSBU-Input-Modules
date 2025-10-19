@@ -74,7 +74,7 @@ static mut player_8_last_frame: i32 = 0;
 /// 
 /// # Arguments
 /// 
-/// * `module_accessor` - a pointer to `BattleObjectModuleAccessor`
+/// * `entry_id` - a pointer to what fighter you are using `usize`
 /// 
 /// * `vec` - a `Vec` containing a `Vec` of `InputDirections` to check for each step of the input (Null can be used for inputs where you dont need to check a direction)
 /// 
@@ -86,14 +86,13 @@ static mut player_8_last_frame: i32 = 0;
 ///     unsafe extern "C" fighter_init(fighter: &mut L2CFighterCommon) {
 ///         
 ///         //adds geese howard's pretzel input (1632143)
-///         MotionInputModule::add_motion(fighter.module_accessor, [[DOWN_BACK].to_vec(), [FORWARD].to_vec(), [DOWN_FORWARD].to_vec(), [DOWN].to_vec(), [DOWN_BACK].to_vec(), [BACK].to_vec(), [DOWN_FORWARD].to_vec()].to_vec());
+///         MotionInputModule::add_motion(fighter.entry_id, [[DOWN_BACK].to_vec(), [FORWARD].to_vec(), [DOWN_FORWARD].to_vec(), [DOWN].to_vec(), [DOWN_BACK].to_vec(), [BACK].to_vec(), [DOWN_FORWARD].to_vec()].to_vec());
 ///         
 ///     }
 /// ```
-pub unsafe fn add_motion(module_accessor:*mut BattleObjectModuleAccessor, mut vec: Vec<Vec<InputDirection>>) {
+pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 
     vec.push([NULL].to_vec());
-    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_dir_vec = get_per_dir_vec(&entry_id);
     let per_input_vec = get_per_input_vec(&entry_id);
     let index = per_dir_vec.len();
@@ -147,20 +146,19 @@ pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
 /// Changes how long the input can go without a new step before its reset defualt is 9
 /// 
 /// for raging demon style inputs its best to change this to 20 
-pub unsafe fn change_life(module_accessor:*mut BattleObjectModuleAccessor, input: usize, new_life: u8) {
+pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
 
-    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = get_per_input_vec(&entry_id);
 
     per_input_vec[input].defualt_life = new_life;
 
 }
 
-/// Adds a button to a specific step of an input 
+/// Adds a button to a specific step of the input 
 /// 
 /// # Arguments
 /// 
-/// * `module_accessor` - a pointer to `BattleObjectModuleAccessor`
+/// * `entry_id` - a pointer to what fighter you are using `usize`
 /// 
 /// * `input` - an index that points to the motion input being edited `usize`
 /// 
@@ -182,19 +180,18 @@ pub unsafe fn change_life(module_accessor:*mut BattleObjectModuleAccessor, input
 /// use inputmodule::{*, InputType::*, CommandInputModule::{*, InputDirection::*}}
 /// 
 /// //adds the raging demon input
-/// MotionInputModule::add_motion(fighter.module_accessor, [[NULL].to_vec(), [NULL].to_vec(), [FORWARD].to_vec(), [NULL].to_vec(), [NULL].to_vec()].to_vec());
-/// MotionInputModule::add_button(fighter.module_accessor, 0, 0, [*CONTROL_PAD_BUTTON_ATTACK].to_vec(), trigger, None, None, None);
-/// MotionInputModule::add_button(fighter.module_accessor, 0, 1, [*CONTROL_PAD_BUTTON_ATTACK].to_vec(), trigger, None, None, None);
-/// MotionInputModule::add_button(fighter.module_accessor, 0, 3, [*CONTROL_PAD_BUTTON_ATTACK].to_vec(), trigger, None, None, None);
-/// MotionInputModule::add_button(fighter.module_accessor, 0, 4, [*CONTROL_PAD_BUTTON_SPECIAL].to_vec(), trigger, None, None, None);
-/// MotionInputModule::allow_shortcut(fighter.module_accessor, 0, 2);
-/// MotionInputModule::set_max_shortcuts(fighter.module_accessor, 0, 2);
-/// MotionInputModule::change_life(fighter.module_accessor, 0, 20);
+/// MotionInputModule::add_motion(fighter.entry_id, [[NULL].to_vec(), [NULL].to_vec(), [FORWARD].to_vec(), [NULL].to_vec(), [NULL].to_vec()].to_vec());
+/// MotionInputModule::add_button(fighter.entry_id, 0, 0, [*CONTROL_PAD_BUTTON_ATTACK].to_vec(), trigger, None, None, None);
+/// MotionInputModule::add_button(fighter.entry_id, 0, 1, [*CONTROL_PAD_BUTTON_ATTACK].to_vec(), trigger, None, None, None);
+/// MotionInputModule::add_button(fighter.entry_id, 0, 3, [*CONTROL_PAD_BUTTON_ATTACK].to_vec(), trigger, None, None, None);
+/// MotionInputModule::add_button(fighter.entry_id, 0, 4, [*CONTROL_PAD_BUTTON_SPECIAL].to_vec(), trigger, None, None, None);
+/// MotionInputModule::allow_shortcut(fighter.entry_id, 0, 2);
+/// MotionInputModule::set_max_shortcuts(fighter.entry_id, 0, 2);
+/// MotionInputModule::change_life(fighter.entry_id, 0, 20);
 /// ``` 
 
-pub unsafe fn add_button(module_accessor:*mut BattleObjectModuleAccessor, input: usize, step: usize, buttons: Vec<i32>, input_type: InputType, allow_extra_frame: Option<bool>, allow_negative_edge: Option<bool>, allow_c_stick_input: Option<bool>) {
+pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Vec<i32>, input_type: InputType, allow_extra_frame: Option<bool>, allow_negative_edge: Option<bool>, allow_c_stick_input: Option<bool>) {
         
-    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_dir_vec = get_per_dir_vec(&entry_id);
 
     per_dir_vec[input][step].button = Some(buttons);
@@ -208,18 +205,16 @@ pub unsafe fn add_button(module_accessor:*mut BattleObjectModuleAccessor, input:
 /// Makes it so all the buttons pervided must be pressed for the input to complete
 /// 
 /// if you use this its best if you use the RAW version of the `CONTROL_PAD_BUTTON`s
-pub unsafe fn require_simultaneously_buttons(module_accessor:*mut BattleObjectModuleAccessor, input: usize, step: usize) {
+pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step: usize) {
 
-    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_dir_vec = get_per_dir_vec(&entry_id);
 
     per_dir_vec[input][step].require_multiple_pressed_inputs = true;
 }
 
 /// Makes it so that if the motion is done and the buttons are not pressed or vise versa the input will reset
-pub unsafe fn add_strict(module_accessor:*mut BattleObjectModuleAccessor, input: usize, step: usize) {
+pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 
-    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_dir_vec = get_per_dir_vec(&entry_id);
 
     per_dir_vec[input][step].strict = true;
@@ -228,9 +223,8 @@ pub unsafe fn add_strict(module_accessor:*mut BattleObjectModuleAccessor, input:
 /// Sets the total amount of inputs that can be done in 1 frame
 /// 
 /// Defualts to 1 and wont allow any shortcutting
-pub unsafe fn set_max_shortcuts(module_accessor:*mut BattleObjectModuleAccessor, input: usize, new_max_shortcuts: u8) {
+pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
 
-    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = get_per_input_vec(&entry_id);
 
     per_input_vec[input].max_shortcuts = new_max_shortcuts;
@@ -238,9 +232,8 @@ pub unsafe fn set_max_shortcuts(module_accessor:*mut BattleObjectModuleAccessor,
 }
 
 /// Allows the input to check the next input in the series on the same frame
-pub unsafe fn allow_shortcut(module_accessor:*mut BattleObjectModuleAccessor, input: usize, step: usize) {
+pub unsafe fn allow_shortcut(entry_id: usize, input: usize, step: usize) {
 
-    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_dir_vec = get_per_dir_vec(&entry_id);
 
     per_dir_vec[input][step].can_shortcut = true;
@@ -328,7 +321,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
         for i in 0 .. max_shortcuts {
 
 
-            let mut step = per_input_vec[inputs].step;
+            let step = per_input_vec[inputs].step;
             let max_step = per_dir_vec[inputs].len() - 1;
             let dirs = per_dir_vec[inputs][step as usize].direction.clone();
             let input_type = per_dir_vec[inputs][step as usize].input_type;
