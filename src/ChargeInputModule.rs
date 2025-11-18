@@ -282,7 +282,7 @@ pub unsafe fn regress_with_failed_input(entry_id: usize, input: usize) {
     per_input[input].regress_with_failed_input = true;
 }
 
-/// Resets the input manualy
+/// Resets the input manually
 pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
