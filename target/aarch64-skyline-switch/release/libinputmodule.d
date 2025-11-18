@@ -1,1 +1,0 @@
-C:\rust\SSBU-Input-Modules\target\aarch64-skyline-switch\release\libinputmodule.so: C:\rust\SSBU-Input-Modules\src\ChargeInputModule.rs C:\rust\SSBU-Input-Modules\src\CommandInputModule.rs C:\rust\SSBU-Input-Modules\src\MotionInputModule.rs C:\rust\SSBU-Input-Modules\src\lib.rs
