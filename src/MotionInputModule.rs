@@ -129,6 +129,17 @@ pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 
 }
 
+/// Resets an input manualy 
+pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) {
+
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+    let per_input_vec = get_per_input_vec(&entry_id);
+
+    per_input_vec[input].step = 0;
+    per_input_vec[input].life = 0;
+
+}
+
 /// Clears all the data in the Module so its ready for the next fighter
 pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
 
