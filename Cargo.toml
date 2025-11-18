@@ -1,6 +1,6 @@
 [package]
 name = "inputmodule"
-version = "0.7.5"
+version = "0.8.0"
 authors = ["games869"]
 edition = "2018"
 
