@@ -197,7 +197,7 @@ dependencies = [
 
 [[package]]
 name = "inputmodule"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "arcropolis-api",
  "lazy_static",

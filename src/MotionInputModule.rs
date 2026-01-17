@@ -297,18 +297,19 @@ pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input
 /// # Example 
 /// ```
 ///     if !StatusModule::is_changing(fighter.module_accessor) {
+///         let frame = fighter.global_table[0xE].get_i32();
 ///         MotionInputModule::update_timers(fighter.module_accessor);
-///         MotionInputModule::update_module(fighter.module_accessor);
+///         MotionInputModule::update_module(fighter.module_accessor, frame, false);
 ///     }
 /// ``` 
-pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, frame: i32) {
+pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, frame: i32, ignore_repeat_frame: bool) {
 
     
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let last_update_frame = get_last_update_frame(&entry_id);
     
 
-    if frame == *last_update_frame {
+    if frame == *last_update_frame && !ignore_repeat_frame {
 
 
         return;

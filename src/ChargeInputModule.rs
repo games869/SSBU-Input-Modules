@@ -344,14 +344,14 @@ pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
     }
 }
 
-///updates all the charge inputs for that frame (if you need to run this multiple times in a frame it will only update the first time)
-pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, frame: i32) {
+///updates all the charge inputs for that frame 
+pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, frame: i32, ignore_repeat_frame: bool) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let last_update_frame = get_last_update_frame(&entry_id);
     
 
-    if frame == *last_update_frame {
+    if frame == *last_update_frame && !ignore_repeat_frame {
 
 
         return;
