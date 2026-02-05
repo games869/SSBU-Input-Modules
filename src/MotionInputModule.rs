@@ -338,32 +338,22 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
             let dirs = per_dir_vec[inputs][step as usize].direction.clone();
             let input_type = per_dir_vec[inputs][step as usize].input_type;
             let require_multiple_pressed_inputs = per_dir_vec[inputs][step as usize].require_multiple_pressed_inputs;
+            let is_missed_strict_timing = is_motion_correct(module_accessor, dirs.clone(), inputs) && !is_buttons_correct(module_accessor, inputs) || !is_motion_correct(module_accessor, dirs.clone(), inputs) && is_buttons_correct(module_accessor, inputs);
 
-            if per_input_vec[inputs].life == 0 {
+            if per_input_vec[inputs].life == 0 && ( !is_complete(module_accessor, inputs) || is_complete(module_accessor, inputs) && CancelModule::is_enable_cancel(module_accessor) ) {
 
             
                 per_input_vec[inputs].step = 0;
 
             }
 
-            if 
-                is_motion_correct(module_accessor, dirs.clone(), inputs) && 
-                !is_buttons_correct(module_accessor, inputs) && 
-                per_dir_vec[inputs][step as usize].strict
-                    ||
-                !is_motion_correct(module_accessor, dirs.clone(), inputs) && 
-                is_buttons_correct(module_accessor, inputs) && 
-                per_dir_vec[inputs][step as usize].strict 
-            {
+            if is_missed_strict_timing && per_dir_vec[inputs][step as usize].strict {
+
                 per_input_vec[inputs].step = 0;
                 per_input_vec[inputs].life = 0;
-            }
-            else if 
-                is_motion_correct(module_accessor, dirs, inputs) && 
-                is_buttons_correct(module_accessor, inputs) && 
-                step as usize != max_step 
-            {
 
+            }
+            else if is_motion_correct(module_accessor, dirs, inputs) && is_buttons_correct(module_accessor, inputs) && step as usize != max_step {
 
                 let new_life = per_input_vec[inputs].defualt_life;
 
@@ -376,7 +366,6 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                     break;
 
                 }
-
             }
             else {
 
@@ -384,9 +373,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
             }
         }
-        
     }
-
 }
 
 /// Updates the life of every input

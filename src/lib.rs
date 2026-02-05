@@ -16,7 +16,8 @@
 	non_camel_case_types,
     clippy::borrow_interior_mutable_const,
 	ambiguous_glob_reexports,
-    hidden_glob_reexports
+    hidden_glob_reexports,
+    dead_code
 )]
 use {
 	smash::{

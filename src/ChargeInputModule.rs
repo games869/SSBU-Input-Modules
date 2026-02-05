@@ -373,9 +373,9 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
         let max_step = per_dir[input].len() - 1;
         let dirs = per_dir[input][step as usize].direction.clone();
         let stick_dir = CommandInputModule::get_stick_dir(module_accessor);
+        let is_missed_strict_timing = !check_charge(module_accessor, input) && check_buttons(module_accessor, input) || check_charge(module_accessor, input) && !check_buttons(module_accessor, input);
 
-
-        if life == 0 && !per_input[input].requier_manual_input_kill {
+        if life == 0 && !per_input[input].requier_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) {
             per_input[input].step = 0;
             per_input[input].charge_time = 0;
 
@@ -393,13 +393,12 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
             
         }
 
-        if !check_charge(module_accessor, input) && check_buttons(module_accessor, input) && per_dir[input][step].strict
-            ||
-            check_charge(module_accessor, input) && !check_buttons(module_accessor, input) && per_dir[input][step].strict
-        {
+        if is_missed_strict_timing && per_dir[input][step].strict {
+
             per_input[input].life = 0;
             per_input[input].step = 0;
             per_input[input].charge_time = 0;
+
         }
         else if check_charge(module_accessor, input) && check_buttons(module_accessor, input) && step != max_step {
             if should_progress(module_accessor, input) {
