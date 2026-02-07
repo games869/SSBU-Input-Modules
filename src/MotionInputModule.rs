@@ -6,7 +6,7 @@ use {
         lib::{ lua_const::*, L2CAgent, L2CValue },
         hash40
     },
-    super::{ *, InputType, CommandInputModule::{ *, InputDirection::*  }}, 
+    super::{ *, InputType, StickType, CommandInputModule::{ *, InputDirection::*  }}, 
     smash_script::*, 
     smashline::{ locks::*, Priority::*, * }, 
     std::{ any::type_name, usize },
@@ -20,7 +20,8 @@ struct per_input {
     step: u8,
     life: u8,
     defualt_life: u8,
-    max_shortcuts: u8
+    max_shortcuts: u8,
+    stick_type: StickType
 
 }
 #[derive(PartialEq, Debug, Clone)]
@@ -122,7 +123,8 @@ pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
         defualt_life,
         life: defualt_life,
         step: 0,
-        max_shortcuts: 1
+        max_shortcuts: 1,
+        stick_type: StickType::control_stick_only
     };
     per_input_vec.push(blank_input);
 
@@ -243,12 +245,15 @@ pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts
 }
 
 /// Allows the input to check the next input in the series on the same frame
-pub unsafe fn allow_shortcut(entry_id: usize, input: usize, step: usize) {
+pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
 
     let per_dir_vec = get_per_dir_vec(&entry_id);
+    
+    for step in steps {
+        
+        per_dir_vec[input][step].can_shortcut = true;
 
-    per_dir_vec[input][step].can_shortcut = true;
-
+    }
 }
 
 /// Returns what step the given input is on as a `u8`
@@ -290,6 +295,17 @@ pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input
     
 }
 
+/// Changes which control stick can update the motion inputs
+/// 
+/// by default its set to control_stick_only
+pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
+    
+    let per_input_vec = get_per_input_vec(&entry_id);
+
+    per_input_vec[input].stick_type = new_stick_type;
+
+}
+
 /// Updates everything in the Module for that frame 
 /// 
 /// Best to run this before the inputs are checked and then again in a frame
@@ -329,48 +345,54 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
     for inputs in 0 .. per_input_vec.len() {
 
         let max_shortcuts = per_input_vec[inputs].max_shortcuts;
+        let input_stick_type = per_input_vec[inputs].stick_type;
+        let is_cstick = (input_stick_type == StickType::c_stick_only && ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) ) || input_stick_type != StickType::c_stick_only;
+        let is_main_stick = (input_stick_type == StickType::control_stick_only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON)) || input_stick_type != StickType::control_stick_only;
 
-        for i in 0 .. max_shortcuts {
+        if input_stick_type == StickType::both || is_cstick && is_main_stick {
+            
+            for i in 0 .. max_shortcuts {
 
 
-            let step = per_input_vec[inputs].step;
-            let max_step = per_dir_vec[inputs].len() - 1;
-            let dirs = per_dir_vec[inputs][step as usize].direction.clone();
-            let input_type = per_dir_vec[inputs][step as usize].input_type;
-            let require_multiple_pressed_inputs = per_dir_vec[inputs][step as usize].require_multiple_pressed_inputs;
-            let is_missed_strict_timing = is_motion_correct(module_accessor, dirs.clone(), inputs) && !is_buttons_correct(module_accessor, inputs) || !is_motion_correct(module_accessor, dirs.clone(), inputs) && is_buttons_correct(module_accessor, inputs);
+                let step = per_input_vec[inputs].step;
+                let max_step = per_dir_vec[inputs].len() - 1;
+                let dirs = per_dir_vec[inputs][step as usize].direction.clone();
+                let input_type = per_dir_vec[inputs][step as usize].input_type;
+                let require_multiple_pressed_inputs = per_dir_vec[inputs][step as usize].require_multiple_pressed_inputs;
+                let is_missed_strict_timing = is_motion_correct(module_accessor, dirs.clone(), inputs) && !is_buttons_correct(module_accessor, inputs) || !is_motion_correct(module_accessor, dirs.clone(), inputs) && is_buttons_correct(module_accessor, inputs);
 
-            if per_input_vec[inputs].life == 0 && ( !is_complete(module_accessor, inputs) || is_complete(module_accessor, inputs) && CancelModule::is_enable_cancel(module_accessor) ) {
+                if per_input_vec[inputs].life == 0 && ( !is_complete(module_accessor, inputs) || is_complete(module_accessor, inputs) && CancelModule::is_enable_cancel(module_accessor) ) {
 
             
-                per_input_vec[inputs].step = 0;
+                    per_input_vec[inputs].step = 0;
 
-            }
+                }
 
-            if is_missed_strict_timing && per_dir_vec[inputs][step as usize].strict {
+                if is_missed_strict_timing && per_dir_vec[inputs][step as usize].strict {
 
-                per_input_vec[inputs].step = 0;
-                per_input_vec[inputs].life = 0;
+                    per_input_vec[inputs].step = 0;
+                    per_input_vec[inputs].life = 0;
 
-            }
-            else if is_motion_correct(module_accessor, dirs, inputs) && is_buttons_correct(module_accessor, inputs) && step as usize != max_step {
+                }
+                else if is_motion_correct(module_accessor, dirs, inputs) && is_buttons_correct(module_accessor, inputs) && step as usize != max_step {
 
-                let new_life = per_input_vec[inputs].defualt_life;
+                    let new_life = per_input_vec[inputs].defualt_life;
 
-                per_input_vec[inputs].step += 1;
-                per_input_vec[inputs].life = new_life;
+                    per_input_vec[inputs].step += 1;
+                    per_input_vec[inputs].life = new_life;
 
 
-                if !per_dir_vec[inputs][step as usize].can_shortcut {
+                    if !per_dir_vec[inputs][step as usize].can_shortcut {
+
+                        break;
+
+                    }
+                }
+                else {
 
                     break;
 
                 }
-            }
-            else {
-
-                break;
-
             }
         }
     }

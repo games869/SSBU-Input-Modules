@@ -46,6 +46,14 @@ pub enum InputType {
     perfect
 
 }
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum StickType {
+
+    both,
+    control_stick_only,
+    c_stick_only
+    
+}
 
 impl fmt::Display for InputType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

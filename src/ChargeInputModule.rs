@@ -6,7 +6,7 @@ use {
         lib::{ lua_const::*, L2CAgent, L2CValue },
         hash40
     },
-    super::{ *, InputType, CommandInputModule::{ *, InputDirection::*  }}, 
+    super::{ *, InputType, StickType, CommandInputModule::{ *, InputDirection::*  }}, 
     smash_script::*, 
     smashline::{ locks::*, Priority::*, * }, 
     std::{ any::type_name, usize },
@@ -20,7 +20,8 @@ struct per_input {
     life: u8,
     charge_time: u8,
     requier_manual_input_kill: bool,
-    regress_with_failed_input: bool
+    regress_with_failed_input: bool,
+    stick_type: StickType
 
 }
 #[derive(PartialEq, Debug, Clone)]
@@ -125,7 +126,8 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
         life: defualt_life, 
         charge_time: defualt_charge_time,
         requier_manual_input_kill: false,
-        regress_with_failed_input: false
+        regress_with_failed_input: false,
+        stick_type: StickType::control_stick_only
     };
 
     //so fun fact to anyone reading my repo i forgot this line of code durring the first test of the module cuasing a fun bit of debugging
@@ -344,6 +346,17 @@ pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
     }
 }
 
+/// Changes which control stick can update the charge inputs
+/// 
+/// by default its set to control_stick_only
+pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
+    
+    let per_input_vec = get_per_input_vec(&entry_id);
+
+    per_input_vec[input].stick_type = new_stick_type;
+
+}
+
 ///updates all the charge inputs for that frame 
 pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, frame: i32, ignore_repeat_frame: bool) {
 
@@ -374,41 +387,47 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
         let dirs = per_dir[input][step as usize].direction.clone();
         let stick_dir = CommandInputModule::get_stick_dir(module_accessor);
         let is_missed_strict_timing = !check_charge(module_accessor, input) && check_buttons(module_accessor, input) || check_charge(module_accessor, input) && !check_buttons(module_accessor, input);
+        let input_stick_type = per_input[input].stick_type;
+        let is_cstick = (input_stick_type == StickType::c_stick_only && ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) ) || input_stick_type != StickType::c_stick_only;
+        let is_main_stick = (input_stick_type == StickType::control_stick_only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON)) || input_stick_type != StickType::control_stick_only;
 
-        if life == 0 && !per_input[input].requier_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) {
-            per_input[input].step = 0;
-            per_input[input].charge_time = 0;
+        if input_stick_type == StickType::both || is_cstick && is_main_stick {
 
-        }
-
-        if per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && step != max_step {
-
-            if per_input[input].charge_time < per_dir[input][step].required_charge_time {
-            
-                per_input[input].charge_time += 1;
-
-            }
-        }
-        else if !(per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && per_input[input].regress_with_failed_input {
-            
-        }
-
-        if is_missed_strict_timing && per_dir[input][step].strict {
-
-            per_input[input].life = 0;
-            per_input[input].step = 0;
-            per_input[input].charge_time = 0;
-
-        }
-        else if check_charge(module_accessor, input) && check_buttons(module_accessor, input) && step != max_step {
-            if should_progress(module_accessor, input) {
-                
-                step += 1;
-                per_input[input].step = step as u8;
-                let new_life = per_dir[input][step].defualt_life;
-                per_input[input].life = new_life;
+            if life == 0 && !per_input[input].requier_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) {
+                per_input[input].step = 0;
                 per_input[input].charge_time = 0;
 
+            }
+
+            if per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && step != max_step {
+
+                if per_input[input].charge_time < per_dir[input][step].required_charge_time {
+            
+                    per_input[input].charge_time += 1;
+
+                }
+            }
+            else if !(per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && per_input[input].regress_with_failed_input {
+                // todo finish buster style charge inputs
+            }
+
+            if is_missed_strict_timing && per_dir[input][step].strict {
+
+                per_input[input].life = 0;
+                per_input[input].step = 0;
+                per_input[input].charge_time = 0;
+
+            }
+            else if check_charge(module_accessor, input) && check_buttons(module_accessor, input) && step != max_step {
+                if should_progress(module_accessor, input) {
+                
+                    step += 1;
+                    per_input[input].step = step as u8;
+                    let new_life = per_dir[input][step].defualt_life;
+                    per_input[input].life = new_life;
+                    per_input[input].charge_time = 0;
+
+                }
             }
         }
     }
