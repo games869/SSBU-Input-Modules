@@ -343,8 +343,8 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
         let max_shortcuts = per_input_vec[inputs].max_shortcuts;
         let input_stick_type = per_input_vec[inputs].stick_type;
-        let is_cstick = input_stick_type == StickType::c_stick_only && ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON);
-        let is_main_stick = input_stick_type == StickType::control_stick_only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON);
+        let is_cstick = (input_stick_type == StickType::c_stick_only && ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) ) || input_stick_type != StickType::c_stick_only;
+        let is_main_stick = (input_stick_type == StickType::control_stick_only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON)) || input_stick_type != StickType::control_stick_only;
 
         println!("\ninput: {inputs}, is_cstick: {}", ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON));
 
