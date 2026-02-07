@@ -348,53 +348,50 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
         println!("\ninput: {inputs}, is_cstick: {}", ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON));
 
-        if input_stick_type != StickType::both && (!is_cstick || !is_main_stick) {
+        if input_stick_type == StickType::both || ( is_cstick || is_main_stick ) {
             
-            break;
-
-        }
-
-        for i in 0 .. max_shortcuts {
+            for i in 0 .. max_shortcuts {
 
 
-            let step = per_input_vec[inputs].step;
-            let max_step = per_dir_vec[inputs].len() - 1;
-            let dirs = per_dir_vec[inputs][step as usize].direction.clone();
-            let input_type = per_dir_vec[inputs][step as usize].input_type;
-            let require_multiple_pressed_inputs = per_dir_vec[inputs][step as usize].require_multiple_pressed_inputs;
-            let is_missed_strict_timing = is_motion_correct(module_accessor, dirs.clone(), inputs) && !is_buttons_correct(module_accessor, inputs) || !is_motion_correct(module_accessor, dirs.clone(), inputs) && is_buttons_correct(module_accessor, inputs);
+                let step = per_input_vec[inputs].step;
+                let max_step = per_dir_vec[inputs].len() - 1;
+                let dirs = per_dir_vec[inputs][step as usize].direction.clone();
+                let input_type = per_dir_vec[inputs][step as usize].input_type;
+                let require_multiple_pressed_inputs = per_dir_vec[inputs][step as usize].require_multiple_pressed_inputs;
+                let is_missed_strict_timing = is_motion_correct(module_accessor, dirs.clone(), inputs) && !is_buttons_correct(module_accessor, inputs) || !is_motion_correct(module_accessor, dirs.clone(), inputs) && is_buttons_correct(module_accessor, inputs);
 
-            if per_input_vec[inputs].life == 0 && ( !is_complete(module_accessor, inputs) || is_complete(module_accessor, inputs) && CancelModule::is_enable_cancel(module_accessor) ) {
+                if per_input_vec[inputs].life == 0 && ( !is_complete(module_accessor, inputs) || is_complete(module_accessor, inputs) && CancelModule::is_enable_cancel(module_accessor) ) {
 
             
-                per_input_vec[inputs].step = 0;
+                    per_input_vec[inputs].step = 0;
 
-            }
+                }
 
-            if is_missed_strict_timing && per_dir_vec[inputs][step as usize].strict {
+                if is_missed_strict_timing && per_dir_vec[inputs][step as usize].strict {
 
-                per_input_vec[inputs].step = 0;
-                per_input_vec[inputs].life = 0;
+                    per_input_vec[inputs].step = 0;
+                    per_input_vec[inputs].life = 0;
 
-            }
-            else if is_motion_correct(module_accessor, dirs, inputs) && is_buttons_correct(module_accessor, inputs) && step as usize != max_step {
+                }
+                else if is_motion_correct(module_accessor, dirs, inputs) && is_buttons_correct(module_accessor, inputs) && step as usize != max_step {
 
-                let new_life = per_input_vec[inputs].defualt_life;
+                    let new_life = per_input_vec[inputs].defualt_life;
 
-                per_input_vec[inputs].step += 1;
-                per_input_vec[inputs].life = new_life;
+                    per_input_vec[inputs].step += 1;
+                    per_input_vec[inputs].life = new_life;
 
 
-                if !per_dir_vec[inputs][step as usize].can_shortcut {
+                    if !per_dir_vec[inputs][step as usize].can_shortcut {
+
+                        break;
+
+                    }
+                }
+                else {
 
                     break;
 
                 }
-            }
-            else {
-
-                break;
-
             }
         }
     }
