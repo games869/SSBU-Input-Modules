@@ -295,6 +295,9 @@ pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input
     
 }
 
+/// Changes which control stick can update the motion inputs
+/// 
+/// by default its set to control_stick_only
 pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
     
     let per_input_vec = get_per_input_vec(&entry_id);
@@ -345,8 +348,6 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
         let input_stick_type = per_input_vec[inputs].stick_type;
         let is_cstick = (input_stick_type == StickType::c_stick_only && ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) ) || input_stick_type != StickType::c_stick_only;
         let is_main_stick = (input_stick_type == StickType::control_stick_only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON)) || input_stick_type != StickType::control_stick_only;
-
-        // println!("\ninput: {inputs}, is_cstick: {}", ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON));
 
         if input_stick_type == StickType::both || is_cstick && is_main_stick {
             
