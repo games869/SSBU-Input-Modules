@@ -346,10 +346,12 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
         let is_cstick = input_stick_type == StickType::c_stick_only && ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON);
         let is_main_stick = input_stick_type == StickType::control_stick_only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON);
 
+        println!("\ninput: {inputs}, is_cstick: {}", ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON));
+
         if input_stick_type != StickType::both && (!is_cstick || !is_main_stick) {
             
             break;
-            
+
         }
 
         for i in 0 .. max_shortcuts {

@@ -52,6 +52,7 @@ pub enum StickType {
     both,
     control_stick_only,
     c_stick_only
+    
 }
 
 impl fmt::Display for InputType {
