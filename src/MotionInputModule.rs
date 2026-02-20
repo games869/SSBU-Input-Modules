@@ -28,7 +28,9 @@ struct per_input {
 
 struct per_dir {
 
+    is_raw: bool,
     direction: Vec<InputDirection>,
+    raw_direction: Vec<InputDirectionRaw>,
     button: Option<Vec<i32>>,
     input_type: InputType,
     allow_extra_frame: Option<bool>,
@@ -103,7 +105,71 @@ pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
     for i in 0..vec.len() {
 
         let blank_dir: per_dir = per_dir { 
+            is_raw: false,
             direction: vec[i].clone(), 
+            raw_direction: Vec::new(),
+            button: None, 
+            input_type: InputType::none, 
+            allow_extra_frame: None, 
+            allow_negative_edge: None, 
+            allow_c_stick_input: None,
+            require_multiple_pressed_inputs: false,
+            strict: false,
+            can_shortcut: false 
+        };
+
+        per_dir_vec[index].push(blank_dir);
+        
+        
+    }
+
+    let blank_input = per_input {
+        defualt_life,
+        life: defualt_life,
+        step: 0,
+        max_shortcuts: 1,
+        stick_type: StickType::control_stick_only
+    };
+    per_input_vec.push(blank_input);
+
+
+}
+
+/// Adds a new motion input to the character 
+/// 
+/// # Arguments
+/// 
+/// * `entry_id` - a pointer to what fighter you are using `usize`
+/// 
+/// * `vec` - a `Vec` containing a `Vec` of `InputDirectionRaw`s to check for each step of the input (Null can be used for inputs where you dont need to check a direction)
+/// 
+/// # Exaple
+/// 
+/// ```
+///     use inputmodule::{*, CommandInputModule::{*, InputDirectionRaw::*}};
+/// 
+///     unsafe extern "C" fighter_init(fighter: &mut L2CFighterCommon) {
+///         
+///        
+///         MotionInputModule::add_raw_motion(fighter.entry_id, [[DOWN].to_vec(), [DOWN_LEFT].to_vec(), [LEFT].to_vec());
+///         
+///     }
+/// ```
+pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw>>) {
+
+    vec.push([InputDirectionRaw::NULL].to_vec());
+    let per_dir_vec = get_per_dir_vec(&entry_id);
+    let per_input_vec = get_per_input_vec(&entry_id);
+    let index = per_dir_vec.len();
+
+    per_dir_vec.push(Vec::new());
+
+    for i in 0..vec.len() {
+
+        let blank_dir: per_dir = per_dir { 
+            is_raw: true,
+            direction: Vec::new(),
+            raw_direction: vec[i].clone(), 
             button: None, 
             input_type: InputType::none, 
             allow_extra_frame: None, 
@@ -356,10 +422,12 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
                 let step = per_input_vec[inputs].step;
                 let max_step = per_dir_vec[inputs].len() - 1;
+                let is_raw_input = per_dir_vec[inputs][step as usize].is_raw;
                 let dirs = per_dir_vec[inputs][step as usize].direction.clone();
+                let raw_dirs = per_dir_vec[inputs][step as usize].raw_direction.clone();
                 let input_type = per_dir_vec[inputs][step as usize].input_type;
                 let require_multiple_pressed_inputs = per_dir_vec[inputs][step as usize].require_multiple_pressed_inputs;
-                let is_missed_strict_timing = is_motion_correct(module_accessor, dirs.clone(), inputs) && !is_buttons_correct(module_accessor, inputs) || !is_motion_correct(module_accessor, dirs.clone(), inputs) && is_buttons_correct(module_accessor, inputs);
+                let is_missed_strict_timing = is_motion_correct(module_accessor, dirs.clone(), raw_dirs.clone(), is_raw_input, inputs) && !is_buttons_correct(module_accessor, inputs) || !is_motion_correct(module_accessor, dirs.clone(), raw_dirs.clone(), is_raw_input, inputs) && is_buttons_correct(module_accessor, inputs);
 
                 if per_input_vec[inputs].life == 0 && ( !is_complete(module_accessor, inputs) || is_complete(module_accessor, inputs) && CancelModule::is_enable_cancel(module_accessor) ) {
 
@@ -374,7 +442,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                     per_input_vec[inputs].life = 0;
 
                 }
-                else if is_motion_correct(module_accessor, dirs, inputs) && is_buttons_correct(module_accessor, inputs) && step as usize != max_step {
+                else if is_motion_correct(module_accessor, dirs, raw_dirs.clone(), is_raw_input, inputs) && is_buttons_correct(module_accessor, inputs) && step as usize != max_step {
 
                     let new_life = per_input_vec[inputs].defualt_life;
 
@@ -413,19 +481,21 @@ pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
     }
 }
 
-unsafe fn is_motion_correct(module_accessor:*mut BattleObjectModuleAccessor, motion_vec: Vec<InputDirection>, input: usize) -> bool {
+unsafe fn is_motion_correct(module_accessor:*mut BattleObjectModuleAccessor, motion_vec: Vec<InputDirection>, raw_motion_vec: Vec<InputDirectionRaw>, is_raw: bool, input: usize) -> bool {
 
     let input_dir = CommandInputModule::get_stick_dir(module_accessor);
+    let raw_input_dir = CommandInputModule::get_stick_dir_raw(module_accessor);
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = get_per_input_vec(&entry_id);
     let per_dir_vec = get_per_dir_vec(&entry_id);
+    let raw_null = InputDirectionRaw::NULL;
 
-    if motion_vec.contains(&input_dir) {
+    if !is_raw && motion_vec.contains(&input_dir) || is_raw && raw_motion_vec.contains(&raw_input_dir) {
 
         return true
 
     }
-    else if motion_vec.contains(&NULL) && get_step(module_accessor, input) as usize != per_dir_vec[input].len() {
+    else if (!is_raw && motion_vec.contains(&NULL) || is_raw && raw_motion_vec.contains(&raw_null)) && get_step(module_accessor, input) as usize != per_dir_vec[input].len() {
 
         return true
 
