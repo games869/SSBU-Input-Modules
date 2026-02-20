@@ -96,6 +96,7 @@ pub enum InputDirectionRaw {
     UP_LEFT,
     UP,
     UP_RIGHT,
+    NULL
 
 }
 
@@ -153,7 +154,8 @@ impl fmt::Display for InputDirectionRaw {
             InputDirectionRaw::RIGHT => write!(f, "RIGHT"),
             InputDirectionRaw::UP_LEFT => write!(f, "UP_LEFT"),
             InputDirectionRaw::UP => write!(f, "UP"),
-            InputDirectionRaw::UP_RIGHT => write!(f, "UP_RIGHT")
+            InputDirectionRaw::UP_RIGHT => write!(f, "UP_RIGHT"),
+            InputDirectionRaw::NULL => write!(f, "NULL")
         }
     }
 }
