@@ -429,7 +429,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
                 }
 
-                if per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && step != max_step {
+                if frame != *last_update_frame && (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && step != max_step) {
 
                     if per_input[input].charge_time < per_dir[input][step].required_charge_time {
             
