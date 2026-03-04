@@ -88,9 +88,33 @@ static mut player_8_last_frame: f32 = 0.0;
 ///     unsafe extern "C" fighter_init(fighter: &mut L2CFighterCommon) {
 ///         
 ///         //adds the sonic boom input ([4]6+( attack || special ))
-///         ChargeInputModule::add_charge(fighter.entry_id, [[DOWN_BACK, BACK, UP_BACK].to_vec(), [FORWARD].to_vec()].to_vec());
-///         ChargeInputModule::add_button(fighter.entry_id, 0, 0, [*CONTROL_PAD_BUTTON_ATTACK, *CONTROL_PAD_BUTTON_SPECIAL].to_vec(), trigger, None, None, None);
-///         
+///         ChargeInputModule::add_charge(fighter.entry_id as usize, vec![vec![ BACK, DOWN_BACK, UP_BACK ], vec![ FORWARD, DOWN_FORWARD, UP_FORWARD], button_vec.clone()]);
+///         ChargeInputModule::add_button(
+///             fighter.entry_id as usize, 
+///                 0, 
+///                 2, 
+///                 vec![ *CONTROL_PAD_BUTTON_SPECIAL, *CONTROL_PAD_BUTTON_ATTACK], 
+///                 trigger, 
+///                 None, 
+///                 None, 
+///                 None
+///             );
+///             ChargeInputModule::set_charge_time(
+///                 fighter.entry_id as usize, 
+///                 PHYCHO_CRUSHER, 
+///                 1, 
+///                 0
+///             );
+///             ChargeInputModule::allow_shortcut(
+///                 fighter.entry_id as usize, 
+///                 PHYCHO_CRUSHER, 
+///                 vec![ 1 ]
+///             );
+///             ChargeInputModule::set_max_shortcuts(
+///                 fighter.entry_id as usize, 
+///                 PHYCHO_CRUSHER, 
+///                 2
+///             );
 ///     }
 /// ```
 pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
@@ -350,6 +374,17 @@ pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
 /// Updates the life of each charge input
 /// 
 /// needs to be run once per frame
+/// 
+/// # Example
+/// 
+/// ```
+///  if !StatusModule::is_changing(fighter.module_accessor) && ControlModule::check_button_off(fighter.module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) {
+///  
+///     ChargeInputModule::update_module(fighter.module_accessor, fighter.global_table[0xE].get_f32(), false);    
+///     ChargeInputModule::update_timers(fighter.module_accessor);
+///  
+///  }
+/// ```
 pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;

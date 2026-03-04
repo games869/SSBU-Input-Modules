@@ -379,7 +379,7 @@ pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: Stic
 /// # Example 
 /// ```
 ///     if !StatusModule::is_changing(fighter.module_accessor) {
-///         let frame = fighter.global_table[0xE].get_i32();
+///         let frame = fighter.global_table[0xE].get_f32();
 ///         MotionInputModule::update_timers(fighter.module_accessor);
 ///         MotionInputModule::update_module(fighter.module_accessor, frame, false);
 ///     }
