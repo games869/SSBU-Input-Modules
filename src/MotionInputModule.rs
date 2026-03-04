@@ -417,7 +417,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
         if input_stick_type == StickType::both || is_cstick && is_main_stick {
             
-            for i in 0 .. max_shortcuts {
+            for _ in 0 .. max_shortcuts {
 
 
                 let step = per_input_vec[inputs].step;
