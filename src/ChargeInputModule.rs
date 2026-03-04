@@ -19,6 +19,7 @@ struct per_input {
     step: u8,
     life: u8,
     charge_time: u8,
+    max_shortcuts: u8,
     requier_manual_input_kill: bool,
     regress_with_failed_input: bool,
     stick_type: StickType
@@ -37,7 +38,8 @@ struct per_dir {
     require_multiple_pressed_inputs: bool,
     strict: bool,
     defualt_life: u8,
-    required_charge_time: u8
+    required_charge_time: u8,
+    can_shortcut: bool
 
 }
 
@@ -113,7 +115,8 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
             require_multiple_pressed_inputs: false, 
             strict: false, 
             defualt_life: defualt_life, 
-            required_charge_time: charge 
+            required_charge_time: charge,
+            can_shortcut: false
         };
 
         per_dir_v[index].push(blank_dir);
@@ -127,7 +130,8 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
         charge_time: defualt_charge_time,
         requier_manual_input_kill: false,
         regress_with_failed_input: false,
-        stick_type: StickType::control_stick_only
+        stick_type: StickType::control_stick_only,
+        max_shortcuts: 1
     };
 
     //so fun fact to anyone reading my repo i forgot this line of code durring the first test of the module cuasing a fun bit of debugging
@@ -203,9 +207,33 @@ pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step
     per_dir_vec[input][step].require_multiple_pressed_inputs = true;
 }
 
-/// Returns the current step of an input
-pub unsafe fn get_step(entry_id: usize, input: usize) -> u8 {
+/// Sets the total amount of inputs that can be done in 1 frame
+/// 
+/// Defualts to 1 and wont allow any shortcutting
+pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
+
+    let per_input_vec = get_per_input_vec(&entry_id);
+
+    per_input_vec[input].max_shortcuts = new_max_shortcuts;
+
+}
+
+/// Allows the input to check the next input in the series on the same frame
+pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
+
+    let per_dir_vec = get_per_dir_vec(&entry_id);
     
+    for step in steps {
+        
+        per_dir_vec[input][step].can_shortcut = true;
+
+    }
+}
+
+/// Returns the current step of an input
+pub unsafe fn get_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> u8 {
+    
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = get_per_input_vec(&entry_id);
 
     per_input_vec[input].step
@@ -213,8 +241,9 @@ pub unsafe fn get_step(entry_id: usize, input: usize) -> u8 {
 }
 
 /// Returns the current life of an input
-pub unsafe fn get_life(entry_id: usize, input: usize) -> u8 {
+pub unsafe fn get_life(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> u8 {
 
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = get_per_input_vec(&entry_id);
 
     per_input_vec[input].life
@@ -222,8 +251,9 @@ pub unsafe fn get_life(entry_id: usize, input: usize) -> u8 {
 }
 
 /// Returns the current charge time of an input
-pub unsafe fn get_charge_time(entry_id: usize, input: usize) -> u8 {
+pub unsafe fn get_charge_time(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> u8 {
 
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = get_per_input_vec(&entry_id);
 
     per_input_vec[input].charge_time
@@ -338,8 +368,7 @@ pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
         }
         else if per_dir[index][step].direction.contains(&stick_dir) {
 
-            let new_life = per_dir[index][step].defualt_life;
-            per_input[index].life = new_life;
+            per_input[index].life = per_dir[index][step].defualt_life;
 
         }
         
@@ -390,43 +419,56 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
         let input_stick_type = per_input[input].stick_type;
         let is_cstick = (input_stick_type == StickType::c_stick_only && ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) ) || input_stick_type != StickType::c_stick_only;
         let is_main_stick = (input_stick_type == StickType::control_stick_only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON)) || input_stick_type != StickType::control_stick_only;
+        let max_shortcuts = per_input[input].max_shortcuts;
 
         if input_stick_type == StickType::both || is_cstick && is_main_stick {
-
-            if life == 0 && !per_input[input].requier_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) {
-                per_input[input].step = 0;
-                per_input[input].charge_time = 0;
-
-            }
-
-            if per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && step != max_step {
-
-                if per_input[input].charge_time < per_dir[input][step].required_charge_time {
-            
-                    per_input[input].charge_time += 1;
-
-                }
-            }
-            else if !(per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && per_input[input].regress_with_failed_input {
-                // todo finish buster style charge inputs
-            }
-
-            if is_missed_strict_timing && per_dir[input][step].strict {
-
-                per_input[input].life = 0;
-                per_input[input].step = 0;
-                per_input[input].charge_time = 0;
-
-            }
-            else if check_charge(module_accessor, input) && check_buttons(module_accessor, input) && step != max_step {
-                if should_progress(module_accessor, input) {
-                
-                    step += 1;
-                    per_input[input].step = step as u8;
-                    let new_life = per_dir[input][step].defualt_life;
-                    per_input[input].life = new_life;
+            for _ in 0 .. max_shortcuts {
+                if life == 0 && !per_input[input].requier_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) {
+                    per_input[input].step = 0;
                     per_input[input].charge_time = 0;
 
+                }
+
+                if per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && step != max_step {
+
+                    if per_input[input].charge_time < per_dir[input][step].required_charge_time {
+            
+                        per_input[input].charge_time += 1;
+
+                    }
+                }
+                else if !(per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && per_input[input].regress_with_failed_input {
+                    // todo finish buster style charge inputs
+                }
+
+                if is_missed_strict_timing && per_dir[input][step].strict {
+
+                    per_input[input].life = 0;
+                    per_input[input].step = 0;
+                    per_input[input].charge_time = 0;
+
+                }
+                else if check_charge(module_accessor, input) && check_buttons(module_accessor, input) && step != max_step {
+                    if should_progress(module_accessor, input) {
+                
+                        step += 1;
+                        per_input[input].step = step as u8;
+                        let new_life = per_dir[input][step].defualt_life;
+                        per_input[input].life = new_life;
+                        per_input[input].charge_time = 0;
+
+                        if !per_dir[input][step as usize].can_shortcut {
+
+                            break;
+
+                        }
+
+                    }
+                }
+                else {
+
+                    break;
+                    
                 }
             }
         }
