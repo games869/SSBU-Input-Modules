@@ -64,14 +64,14 @@ static mut player_6_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
 static mut player_7_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
 static mut player_8_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
 
-static mut player_1_last_frame: i32 = 0;
-static mut player_2_last_frame: i32 = 0;
-static mut player_3_last_frame: i32 = 0;
-static mut player_4_last_frame: i32 = 0;
-static mut player_5_last_frame: i32 = 0;
-static mut player_6_last_frame: i32 = 0;
-static mut player_7_last_frame: i32 = 0;
-static mut player_8_last_frame: i32 = 0;
+static mut player_1_last_frame: f32 = 0.0;
+static mut player_2_last_frame: f32 = 0.0;
+static mut player_3_last_frame: f32 = 0.0;
+static mut player_4_last_frame: f32 = 0.0;
+static mut player_5_last_frame: f32 = 0.0;
+static mut player_6_last_frame: f32 = 0.0;
+static mut player_7_last_frame: f32 = 0.0;
+static mut player_8_last_frame: f32 = 0.0;
 
 /// Adds a new motion input to the character 
 /// 
@@ -218,7 +218,7 @@ pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
 
     *per_dir_vec = Vec::new();
     *per_input_vec = Vec::new();
-    *last_update_frame = 0;
+    *last_update_frame = 0.0;
         
 }
 
@@ -384,7 +384,7 @@ pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: Stic
 ///         MotionInputModule::update_module(fighter.module_accessor, frame, false);
 ///     }
 /// ``` 
-pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, frame: i32, ignore_repeat_frame: bool) {
+pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, frame: f32, ignore_repeat_frame: bool) {
 
     
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
@@ -733,7 +733,7 @@ unsafe fn get_per_dir_vec(entry_id: &usize) -> &mut Vec<Vec<per_dir>> {
 
     ret
 }
-unsafe fn get_last_update_frame(entry_id: &usize) -> *mut i32 {
+unsafe fn get_last_update_frame(entry_id: &usize) -> *mut f32 {
     let ret = if *entry_id == 0 {&raw mut player_1_last_frame} else if *entry_id == 1 { &raw mut player_2_last_frame }
         else if *entry_id == 2 { &mut player_3_last_frame } else if *entry_id == 3 { &mut player_4_last_frame }
         else if *entry_id == 4 { &mut player_5_last_frame } else if *entry_id == 5 { &mut player_6_last_frame }
