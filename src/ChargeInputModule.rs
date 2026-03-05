@@ -407,13 +407,12 @@ pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: Stic
 }
 
 ///updates all the charge inputs for that frame 
-pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, frame: f32, ignore_repeat_frame: bool) {
+pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, frame: f32, ignore_repeat_frame: bool, update_charge_time: bool) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let last_update_frame = &mut charge_input_storage[entry_id].2;
     let prev_last_frame = *last_update_frame;
     
-
     if frame == *last_update_frame && !ignore_repeat_frame {
 
 
@@ -450,7 +449,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
                 }
 
-                if frame != prev_last_frame && (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && step != max_step) {
+                if update_charge_time && (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && step != max_step) {
 
                     if per_input[input].charge_time < per_dir[input][step].required_charge_time {
             

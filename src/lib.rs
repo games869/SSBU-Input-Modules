@@ -10,7 +10,6 @@
 	unused_variables,
 	unused_assignments,
 	unused_unsafe,
-	//unused,
 	non_upper_case_globals,
 	non_snake_case,
 	non_camel_case_types,
@@ -19,6 +18,7 @@
     hidden_glob_reexports,
     dead_code
 )]
+// todo fix all these hidden warnings
 use {
 	smash::{
 	  lua2cpp::*,

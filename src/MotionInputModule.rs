@@ -45,33 +45,16 @@ struct per_dir {
 
 const defualt_life: u8 = 9;
 
-static mut player_1_per_input_vec: Vec<per_input> = Vec::new();
-static mut player_2_per_input_vec: Vec<per_input> = Vec::new();
-static mut player_3_per_input_vec: Vec<per_input> = Vec::new();
-static mut player_4_per_input_vec: Vec<per_input> = Vec::new();
-static mut player_5_per_input_vec: Vec<per_input> = Vec::new();
-static mut player_6_per_input_vec: Vec<per_input> = Vec::new();
-static mut player_7_per_input_vec: Vec<per_input> = Vec::new();
-static mut player_8_per_input_vec: Vec<per_input> = Vec::new();
-    
-
-static mut player_1_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
-static mut player_2_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
-static mut player_3_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
-static mut player_4_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
-static mut player_5_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
-static mut player_6_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
-static mut player_7_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
-static mut player_8_per_direction_vec: Vec<Vec<per_dir>> = Vec::new();
-
-static mut player_1_last_frame: f32 = 0.0;
-static mut player_2_last_frame: f32 = 0.0;
-static mut player_3_last_frame: f32 = 0.0;
-static mut player_4_last_frame: f32 = 0.0;
-static mut player_5_last_frame: f32 = 0.0;
-static mut player_6_last_frame: f32 = 0.0;
-static mut player_7_last_frame: f32 = 0.0;
-static mut player_8_last_frame: f32 = 0.0;
+static mut motion_input_storage: [(Vec<per_input>, Vec<Vec<per_dir>>, f32); 8] = [
+    (Vec::new(), Vec::new(), 0.0), 
+    (Vec::new(), Vec::new(), 0.0), 
+    (Vec::new(), Vec::new(), 0.0),
+    (Vec::new(), Vec::new(), 0.0), 
+    (Vec::new(), Vec::new(), 0.0), 
+    (Vec::new(), Vec::new(), 0.0), 
+    (Vec::new(), Vec::new(), 0.0), 
+    (Vec::new(), Vec::new(), 0.0)
+];
 
 /// Adds a new motion input to the character 
 /// 
@@ -96,8 +79,8 @@ static mut player_8_last_frame: f32 = 0.0;
 pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 
     vec.push([NULL].to_vec());
-    let per_dir_vec = get_per_dir_vec(&entry_id);
-    let per_input_vec = get_per_input_vec(&entry_id);
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
     let index = per_dir_vec.len();
 
     per_dir_vec.push(Vec::new());
@@ -158,8 +141,8 @@ pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw>>) {
 
     vec.push([InputDirectionRaw::NULL].to_vec());
-    let per_dir_vec = get_per_dir_vec(&entry_id);
-    let per_input_vec = get_per_input_vec(&entry_id);
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
     let index = per_dir_vec.len();
 
     per_dir_vec.push(Vec::new());
@@ -201,7 +184,7 @@ pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw
 pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = get_per_input_vec(&entry_id);
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
 
     per_input_vec[input].step = 0;
     per_input_vec[input].life = 0;
@@ -212,9 +195,9 @@ pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, 
 pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_dir_vec = get_per_dir_vec(&entry_id);
-    let per_input_vec = get_per_input_vec(&entry_id);
-    let last_update_frame = get_last_update_frame(&entry_id);
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let last_update_frame = &mut motion_input_storage[entry_id].2;
 
     *per_dir_vec = Vec::new();
     *per_input_vec = Vec::new();
@@ -227,7 +210,7 @@ pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
 /// for raging demon style inputs its best to change this to 20 
 pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
 
-    let per_input_vec = get_per_input_vec(&entry_id);
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
 
     per_input_vec[input].defualt_life = new_life;
 
@@ -271,7 +254,7 @@ pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
 
 pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Vec<i32>, input_type: InputType, allow_extra_frame: Option<bool>, allow_negative_edge: Option<bool>, allow_c_stick_input: Option<bool>) {
         
-    let per_dir_vec = get_per_dir_vec(&entry_id);
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
 
     per_dir_vec[input][step].button = Some(buttons);
     per_dir_vec[input][step].input_type = input_type;
@@ -286,7 +269,7 @@ pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Ve
 /// if you use this its best if you use the RAW version of the `CONTROL_PAD_BUTTON`s
 pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step: usize) {
 
-    let per_dir_vec = get_per_dir_vec(&entry_id);
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
 
     per_dir_vec[input][step].require_multiple_pressed_inputs = true;
 }
@@ -294,7 +277,7 @@ pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step
 /// Makes it so that if the motion is done and the buttons are not pressed or vise versa the input will reset
 pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 
-    let per_dir_vec = get_per_dir_vec(&entry_id);
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
 
     per_dir_vec[input][step].strict = true;
 }
@@ -304,7 +287,7 @@ pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 /// Defualts to 1 and wont allow any shortcutting
 pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
 
-    let per_input_vec = get_per_input_vec(&entry_id);
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
 
     per_input_vec[input].max_shortcuts = new_max_shortcuts;
 
@@ -313,7 +296,7 @@ pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts
 /// Allows the input to check the next input in the series on the same frame
 pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
 
-    let per_dir_vec = get_per_dir_vec(&entry_id);
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
     
     for step in steps {
         
@@ -326,7 +309,7 @@ pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
 pub unsafe fn get_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> u8 {
     
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = get_per_input_vec(&entry_id);
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
 
     per_input_vec[input].step
 
@@ -336,7 +319,7 @@ pub unsafe fn get_step(module_accessor:*mut BattleObjectModuleAccessor, input: u
 pub unsafe fn get_life(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> u8 {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = get_per_input_vec(&entry_id);
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
 
     per_input_vec[input].life
 
@@ -346,8 +329,8 @@ pub unsafe fn get_life(module_accessor:*mut BattleObjectModuleAccessor, input: u
 pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> bool {
     
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = get_per_input_vec(&entry_id);
-    let per_dir_vec = get_per_dir_vec(&entry_id);
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
     let step = per_input_vec[input].step as usize;
     let final_step = per_dir_vec[input].len() - 1;
 
@@ -366,7 +349,7 @@ pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input
 /// by default its set to control_stick_only
 pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
     
-    let per_input_vec = get_per_input_vec(&entry_id);
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
 
     per_input_vec[input].stick_type = new_stick_type;
 
@@ -388,7 +371,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
     
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let last_update_frame = get_last_update_frame(&entry_id);
+    let last_update_frame = &mut motion_input_storage[entry_id].2;
     
 
     if frame == *last_update_frame && !ignore_repeat_frame {
@@ -404,8 +387,8 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
     }
 
     
-    let per_input_vec = get_per_input_vec(&entry_id);
-    let per_dir_vec = get_per_dir_vec(&entry_id);
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
 
 
     for inputs in 0 .. per_input_vec.len() {
@@ -470,7 +453,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = get_per_input_vec(&entry_id);
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
 
     for index in 0 .. per_input_vec.len() {
         if per_input_vec[index].life > 0 {
@@ -486,8 +469,8 @@ unsafe fn is_motion_correct(module_accessor:*mut BattleObjectModuleAccessor, mot
     let input_dir = CommandInputModule::get_stick_dir(module_accessor);
     let raw_input_dir = CommandInputModule::get_stick_dir_raw(module_accessor);
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = get_per_input_vec(&entry_id);
-    let per_dir_vec = get_per_dir_vec(&entry_id);
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
     let raw_null = InputDirectionRaw::NULL;
 
     if !is_raw && motion_vec.contains(&input_dir) || is_raw && raw_motion_vec.contains(&raw_input_dir) {
@@ -509,8 +492,8 @@ unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, in
 
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_dir_vec = get_per_dir_vec(&entry_id);
-    let per_input_vec = get_per_input_vec(&entry_id);
+    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_input_vec = &mut motion_input_storage[entry_id].0;
 
     let step = per_input_vec[input].step as usize;
 
@@ -715,29 +698,4 @@ unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, in
 
     false
 
-}
-
-unsafe fn get_per_input_vec(entry_id: &usize) -> &mut Vec<per_input> {
-    let ret = if *entry_id == 0 { &mut player_1_per_input_vec } else if *entry_id == 1 { &mut player_2_per_input_vec }
-        else if *entry_id == 2 { &mut player_3_per_input_vec } else if *entry_id == 3 { &mut player_4_per_input_vec }
-        else if *entry_id == 4 { &mut player_5_per_input_vec } else if *entry_id == 5 { &mut player_6_per_input_vec }
-        else if *entry_id == 6 { &mut player_7_per_input_vec } else { &mut player_8_per_input_vec };
-
-    ret
-}
-unsafe fn get_per_dir_vec(entry_id: &usize) -> &mut Vec<Vec<per_dir>> {
-    let ret = if *entry_id == 0 { &mut player_1_per_direction_vec } else if *entry_id == 1 { &mut player_2_per_direction_vec }
-        else if *entry_id == 2 { &mut player_3_per_direction_vec } else if *entry_id == 3 { &mut player_4_per_direction_vec }
-        else if *entry_id == 4 { &mut player_5_per_direction_vec } else if *entry_id == 5 { &mut player_6_per_direction_vec }
-        else if *entry_id == 6 { &mut player_7_per_direction_vec } else { &mut player_8_per_direction_vec };
-
-    ret
-}
-unsafe fn get_last_update_frame(entry_id: &usize) -> *mut f32 {
-    let ret = if *entry_id == 0 {&raw mut player_1_last_frame} else if *entry_id == 1 { &raw mut player_2_last_frame }
-        else if *entry_id == 2 { &mut player_3_last_frame } else if *entry_id == 3 { &mut player_4_last_frame }
-        else if *entry_id == 4 { &mut player_5_last_frame } else if *entry_id == 5 { &mut player_6_last_frame }
-        else if *entry_id == 6 { &mut player_7_last_frame } else { &mut player_8_last_frame };
-
-    ret
 }
