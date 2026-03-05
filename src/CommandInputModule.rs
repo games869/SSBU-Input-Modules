@@ -1,14 +1,10 @@
 use {
     smash::{
         lua2cpp::*, 
-        phx::*,
-        app::{ lua_bind::*, sv_animcmd::*, * }, 
-        lib::{ lua_const::*, L2CAgent, L2CValue },
-        hash40
+        app::{ lua_bind::*, * }, 
+        lib::lua_const::*
     }, 
-    smash_script::*, 
-    smashline::{ Priority::*, * }, 
-    std::{ any::type_name, usize },
+    std::usize,
     core::fmt
 }; 
 
@@ -17,16 +13,16 @@ const FORWARD_HIGH:f32 = 15.0;
 const FORWARD_LOW:f32 = -15.0;
 
 const DOWN_FORWARD_HIGH:f32 = -15.0;
-const DOWN_FORWARD_SUB_LOW:f32 = -37.9;
-const DOWN_FORWARD_SUB_HIGH:f32 = -38.0;
+// const DOWN_FORWARD_SUB_LOW:f32 = -37.9;
+// const DOWN_FORWARD_SUB_HIGH:f32 = -38.0;
 const DOWN_FORWARD_LOW:f32 = -80.0;
 
 const DOWN_HIGH:f32 = -80.0;
 const DOWN_LOW:f32 = -100.0;
 
 const DOWN_BACK_HIGH:f32 = -100.0;
-const DOWN_BACK_SUB_LOW:f32 = -141.9;
-const DOWN_BACK_SUB_HIGH:f32 = -142.0;
+// const DOWN_BACK_SUB_LOW:f32 = -141.9;
+// const DOWN_BACK_SUB_HIGH:f32 = -142.0;
 const DOWN_BACK_LOW:f32 = -165.9;
 
 const BACK_HIGH:f32 = 165.0;
@@ -35,16 +31,16 @@ const BACK_SUB_LOW:f32 = -180.0;
 const BACK_LOW:f32 = -165.9;
 
 const UP_BACK_HIGH:f32 = 165.0;
-const UP_BACK_SUB_LOW:f32 = 120.9;
-const UP_BACK_SUB_HIGH:f32 = 119.0;
+// const UP_BACK_SUB_LOW:f32 = 120.9;
+// const UP_BACK_SUB_HIGH:f32 = 119.0;
 const UP_BACK_LOW:f32 = 102.0;
 
 const UP_HIGH:f32 = 102.0;
 const UP_LOW:f32 = 79.0;
 
 const UP_FORWARD_HIGH:f32 = 79.0;
-const UP_FORWARD_SUB_LOW:f32 = 60.0;
-const UP_FORWARD_SUB_HIGH:f32 = 59.9;
+// const UP_FORWARD_SUB_LOW:f32 = 60.0;
+// const UP_FORWARD_SUB_HIGH:f32 = 59.9;
 const UP_FORWARD_LOW:f32 = 15.0;
 
 
@@ -101,24 +97,24 @@ pub enum InputDirectionRaw {
 }
 
 
-static mut down_charge_time:[i32; 8] = [0; 8];
-static mut back_charge_time:[i32; 8] = [0; 8];
-static mut up_charge_time:[i32; 8] = [0; 8];
-static mut forward_charge_time:[i32; 8] = [0; 8];
+static mut DOWN_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut BACK_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut UP_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut FORWARD_CHARGE_TIME:[i32; 8] = [0; 8];
 
-static mut down_charge_buffer_time:[i32; 8] = [0; 8];
-static mut back_charge_buffer_time:[i32; 8] = [0; 8];
-static mut up_charge_buffer_time:[i32; 8] = [0; 8];
-static mut forward_charge_buffer_time:[i32; 8] = [0; 8];
+static mut DOWN_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+static mut BACK_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+static mut UP_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+static mut FORWARD_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
 
-static mut down_back_specific_charge_time:[i32; 8] = [0; 8];
-static mut down_specific_charge_time:[i32; 8] = [0; 8];
-static mut down_forward_specific_charge_time:[i32; 8] = [0; 8];
-static mut back_specific_charge_time:[i32; 8] = [0; 8];
-static mut forward_specific_charge_time:[i32; 8] = [0; 8];
-static mut up_back_specific_charge_time:[i32; 8] = [0; 8];
-static mut up_specific_charge_time:[i32; 8] = [0; 8];
-static mut up_forward_specific_charge_time:[i32; 8] = [0; 8];
+static mut DOWN_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut DOWN_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut DOWN_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut UP_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut UP_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut UP_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
 
 
 impl fmt::Display for InputDirection {
@@ -480,16 +476,16 @@ impl fmt::Display for InputDirectionRaw {
     /// ```
     pub unsafe fn is_charged(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection, length: i32) -> bool {
         let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-        if dir == InputDirection::DOWN && down_charge_time[entry_id] >= length {
+        if dir == InputDirection::DOWN && DOWN_CHARGE_TIME[entry_id] >= length {
             return true;
         }
-        else if dir == InputDirection::BACK && back_charge_time[entry_id] >= length {
+        else if dir == InputDirection::BACK && BACK_CHARGE_TIME[entry_id] >= length {
             return true;
         }
-        else if dir == InputDirection::UP && up_charge_time[entry_id] >= length {
+        else if dir == InputDirection::UP && UP_CHARGE_TIME[entry_id] >= length {
             return true;
         }
-        else if dir == InputDirection::FORWARD && forward_charge_time[entry_id] >= length {
+        else if dir == InputDirection::FORWARD && FORWARD_CHARGE_TIME[entry_id] >= length {
             return true;
         }
         else {
@@ -571,106 +567,106 @@ unsafe fn inc_specific_charge_time(module_accessor:*mut BattleObjectModuleAccess
 
     if dir == InputDirection::NEUTRAL || dir == InputDirection::ERROR {
         
-        down_back_specific_charge_time[entry_id] = 0;
-        down_specific_charge_time[entry_id] = 0;
-        down_forward_specific_charge_time[entry_id] = 0;
+        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        DOWN_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
 
-        back_specific_charge_time[entry_id] = 0;
-        forward_specific_charge_time[entry_id] = 0;
+        BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
 
-        up_forward_specific_charge_time[entry_id] = 0;
-        up_back_specific_charge_time[entry_id] = 0;
-        up_specific_charge_time[entry_id] = 0;
+        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        UP_SPECIFIC_CHARGE_TIME[entry_id] = 0;
             
         return;        
 
     }
         
-    if dir != InputDirection::DOWN_BACK && down_back_specific_charge_time[entry_id] != 0 {
+    if dir != InputDirection::DOWN_BACK && DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
 
-        down_back_specific_charge_time[entry_id] = 0;
+        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
 
     }
     else if dir == InputDirection::DOWN_BACK {
 
-        down_back_specific_charge_time[entry_id] += 1;
+        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
 
     }
 
-    if dir != InputDirection::DOWN && down_specific_charge_time[entry_id] != 0 {
+    if dir != InputDirection::DOWN && DOWN_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
 
-        down_specific_charge_time[entry_id] = 0;
+        DOWN_SPECIFIC_CHARGE_TIME[entry_id] = 0;
 
     }
     else if dir == InputDirection::DOWN {
 
-        down_specific_charge_time[entry_id] += 1;
+        DOWN_SPECIFIC_CHARGE_TIME[entry_id] += 1;
             
     }
 
-    if dir != InputDirection::DOWN_FORWARD && down_forward_specific_charge_time[entry_id] != 0 {
+    if dir != InputDirection::DOWN_FORWARD && DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
 
-        down_forward_specific_charge_time[entry_id] = 0;
+        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
 
     }
     else if dir == InputDirection::DOWN_FORWARD {
 
-        down_forward_specific_charge_time[entry_id] += 1;
+        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
             
     }
 
-    if dir != InputDirection::BACK && back_specific_charge_time[entry_id] != 0 {
+    if dir != InputDirection::BACK && BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
 
-        back_specific_charge_time[entry_id] = 0;
+        BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
 
     }
     else if dir == InputDirection::BACK {
 
-        back_specific_charge_time[entry_id] += 1;
+        BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
             
     }
 
-    if dir != InputDirection::FORWARD && forward_specific_charge_time[entry_id] != 0 {
+    if dir != InputDirection::FORWARD && FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
 
-        forward_specific_charge_time[entry_id] = 0;
+        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
 
     }
     else if dir == InputDirection::FORWARD {
 
-        forward_specific_charge_time[entry_id] += 1;
+        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
             
     }
 
-    if dir != InputDirection::UP_BACK && up_back_specific_charge_time[entry_id] != 0 {
+    if dir != InputDirection::UP_BACK && UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
 
-        up_back_specific_charge_time[entry_id] = 0;
+        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
 
     }
     else if dir == InputDirection::UP_BACK {
 
-        up_back_specific_charge_time[entry_id] += 1;
+        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
             
     }
 
-    if dir != InputDirection::UP && up_specific_charge_time[entry_id] != 0 {
+    if dir != InputDirection::UP && UP_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
 
-        up_specific_charge_time[entry_id] = 0;
+        UP_SPECIFIC_CHARGE_TIME[entry_id] = 0;
 
     }
     else if dir == InputDirection::UP {
 
-        up_specific_charge_time[entry_id] += 1;
+        UP_SPECIFIC_CHARGE_TIME[entry_id] += 1;
             
     }
 
-    if dir != InputDirection::UP_FORWARD && up_forward_specific_charge_time[entry_id] != 0 {
+    if dir != InputDirection::UP_FORWARD && UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
 
-        up_forward_specific_charge_time[entry_id] = 0;
+        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
 
     }
     else if dir == InputDirection::UP_FORWARD {
 
-        up_forward_specific_charge_time[entry_id] += 1;
+        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
             
     }
 }
@@ -681,42 +677,42 @@ unsafe fn get_specific_charge_time(module_accessor:*mut BattleObjectModuleAccess
 
     if *dir == InputDirection::DOWN_BACK {
 
-        return down_back_specific_charge_time[entry_id];
+        return DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id];
 
     }
     else if *dir == InputDirection::DOWN {
 
-        return down_specific_charge_time[entry_id];
+        return DOWN_SPECIFIC_CHARGE_TIME[entry_id];
 
     }
     else if *dir == InputDirection::DOWN_FORWARD {
 
-        return down_forward_specific_charge_time[entry_id];
+        return DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
 
     }
     else if *dir == InputDirection::BACK {
 
-        return back_specific_charge_time[entry_id];
+        return BACK_SPECIFIC_CHARGE_TIME[entry_id];
 
     }
     else if *dir == InputDirection::FORWARD {
 
-        return forward_specific_charge_time[entry_id];
+        return FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
 
     }
     else if *dir == InputDirection::UP_BACK {
 
-        return up_back_specific_charge_time[entry_id];
+        return UP_BACK_SPECIFIC_CHARGE_TIME[entry_id];
 
     }
     else if *dir == InputDirection::UP {
 
-        return up_specific_charge_time[entry_id];
+        return UP_SPECIFIC_CHARGE_TIME[entry_id];
 
     }
     else if *dir == InputDirection::UP_FORWARD {
 
-        return up_forward_specific_charge_time[entry_id];
+        return UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
 
     }
 
@@ -733,59 +729,59 @@ pub unsafe fn update_is_perfect(fighter: &mut L2CFighterCommon) {
     if !StatusModule::is_changing(fighter.module_accessor) { 
         if dir == InputDirection::DOWN || dir == InputDirection::DOWN_BACK || dir == InputDirection::DOWN_FORWARD {
             
-            down_charge_time[entry_id] += 1;
-            down_charge_buffer_time[entry_id] = 9;
+            DOWN_CHARGE_TIME[entry_id] += 1;
+            DOWN_CHARGE_BUFFER_TIME[entry_id] = 9;
 
         }
         else {
-            if down_charge_buffer_time[entry_id] > 0 {
-                down_charge_buffer_time[entry_id] -= 1;
+            if DOWN_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                DOWN_CHARGE_BUFFER_TIME[entry_id] -= 1;
             }
-            else if down_charge_time[entry_id] != 0 {
+            else if DOWN_CHARGE_TIME[entry_id] != 0 {
                 
-                down_charge_time[entry_id] = 0;
+                DOWN_CHARGE_TIME[entry_id] = 0;
 
             }
         } 
         if dir == InputDirection::BACK || dir == InputDirection::UP_BACK || dir == InputDirection::DOWN_BACK {
-            back_charge_time[entry_id] += 1;
-            back_charge_buffer_time[entry_id] = 9;
+            BACK_CHARGE_TIME[entry_id] += 1;
+            BACK_CHARGE_BUFFER_TIME[entry_id] = 9;
         }
         else {
-            if back_charge_buffer_time[entry_id] > 0 {
-                back_charge_buffer_time[entry_id] -= 1;
+            if BACK_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                BACK_CHARGE_BUFFER_TIME[entry_id] -= 1;
             }
-            else if back_charge_time[entry_id] != 0 {
-                back_charge_time[entry_id] = 0;
+            else if BACK_CHARGE_TIME[entry_id] != 0 {
+                BACK_CHARGE_TIME[entry_id] = 0;
             }
         }
 
         if dir == InputDirection::UP || dir == InputDirection::UP_BACK || dir == InputDirection::UP_FORWARD {
-            up_charge_time[entry_id] += 1;
-            up_charge_buffer_time[entry_id] = 9;
+            UP_CHARGE_TIME[entry_id] += 1;
+            UP_CHARGE_BUFFER_TIME[entry_id] = 9;
 
         }
         else {
-            if up_charge_buffer_time[entry_id] > 0 {
-                up_charge_buffer_time[entry_id] -= 1;
+            if UP_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                UP_CHARGE_BUFFER_TIME[entry_id] -= 1;
             }
-            else if up_charge_time[entry_id] != 0 {
+            else if UP_CHARGE_TIME[entry_id] != 0 {
         
-                up_charge_time[entry_id] = 0;
+                UP_CHARGE_TIME[entry_id] = 0;
         
             }
         }
 
         if dir == InputDirection::FORWARD || dir == InputDirection::UP_FORWARD || dir == InputDirection::DOWN_FORWARD {
-            forward_charge_time[entry_id] += 1;
-            forward_charge_buffer_time[entry_id] = 9;
+            FORWARD_CHARGE_TIME[entry_id] += 1;
+            FORWARD_CHARGE_BUFFER_TIME[entry_id] = 9;
         }
         else {
-            if forward_charge_buffer_time[entry_id] > 0 {
-            forward_charge_buffer_time[entry_id] -= 1;
+            if FORWARD_CHARGE_BUFFER_TIME[entry_id] > 0 {
+            FORWARD_CHARGE_BUFFER_TIME[entry_id] -= 1;
             }
-            else if forward_charge_time[entry_id] != 0 {
-                forward_charge_time[entry_id] = 0;
+            else if FORWARD_CHARGE_TIME[entry_id] != 0 {
+                FORWARD_CHARGE_TIME[entry_id] = 0;
             }
         }
 
