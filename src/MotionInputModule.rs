@@ -1,21 +1,16 @@
 use {
     smash::{
-        lua2cpp::*, 
-        phx::*,
-        app::{ lua_bind::*, sv_animcmd::*, * }, 
-        lib::{ lua_const::*, L2CAgent, L2CValue },
-        hash40
+        app::{ lua_bind::*, * }, 
+        lib::lua_const::*
     },
     super::{ *, InputType, StickType, CommandInputModule::{ *, InputDirection::*  }}, 
-    smash_script::*, 
-    smashline::{ locks::*, Priority::*, * }, 
-    std::{ any::type_name, usize },
+    std::usize
 }; 
 
 
 #[derive(PartialEq, Debug, Clone)]
 
-struct per_input {
+struct PerInput {
 
     step: u8,
     life: u8,
@@ -26,7 +21,7 @@ struct per_input {
 }
 #[derive(PartialEq, Debug, Clone)]
 
-struct per_dir {
+struct PerDir {
 
     is_raw: bool,
     direction: Vec<InputDirection>,
@@ -43,9 +38,9 @@ struct per_dir {
 }
 
 
-const defualt_life: u8 = 9;
+const DEFUALT_LIFE: u8 = 9;
 
-static mut motion_input_storage: [(Vec<per_input>, Vec<Vec<per_dir>>, f32); 8] = [
+static mut MOTION_INPUT_STORAGE: [(Vec<PerInput>, Vec<Vec<PerDir>>, f32); 8] = [
     (Vec::new(), Vec::new(), 0.0), 
     (Vec::new(), Vec::new(), 0.0), 
     (Vec::new(), Vec::new(), 0.0),
@@ -79,20 +74,20 @@ static mut motion_input_storage: [(Vec<per_input>, Vec<Vec<per_dir>>, f32); 8] =
 pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 
     vec.push([NULL].to_vec());
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
     let index = per_dir_vec.len();
 
     per_dir_vec.push(Vec::new());
 
     for i in 0..vec.len() {
 
-        let blank_dir: per_dir = per_dir { 
+        let blank_dir: PerDir = PerDir { 
             is_raw: false,
             direction: vec[i].clone(), 
             raw_direction: Vec::new(),
             button: None, 
-            input_type: InputType::none, 
+            input_type: InputType::None, 
             allow_extra_frame: None, 
             allow_negative_edge: None, 
             allow_c_stick_input: None,
@@ -106,12 +101,12 @@ pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
         
     }
 
-    let blank_input = per_input {
-        defualt_life,
-        life: defualt_life,
+    let blank_input = PerInput {
+        defualt_life: DEFUALT_LIFE,
+        life: DEFUALT_LIFE,
         step: 0,
         max_shortcuts: 1,
-        stick_type: StickType::control_stick_only
+        stick_type: StickType::Control_Stick_Only
     };
     per_input_vec.push(blank_input);
 
@@ -141,20 +136,20 @@ pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw>>) {
 
     vec.push([InputDirectionRaw::NULL].to_vec());
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
     let index = per_dir_vec.len();
 
     per_dir_vec.push(Vec::new());
 
     for i in 0..vec.len() {
 
-        let blank_dir: per_dir = per_dir { 
+        let blank_dir: PerDir = PerDir { 
             is_raw: true,
             direction: Vec::new(),
             raw_direction: vec[i].clone(), 
             button: None, 
-            input_type: InputType::none, 
+            input_type: InputType::None, 
             allow_extra_frame: None, 
             allow_negative_edge: None, 
             allow_c_stick_input: None,
@@ -168,12 +163,12 @@ pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw
         
     }
 
-    let blank_input = per_input {
-        defualt_life,
-        life: defualt_life,
+    let blank_input = PerInput {
+        defualt_life: DEFUALT_LIFE,
+        life: DEFUALT_LIFE,
         step: 0,
         max_shortcuts: 1,
-        stick_type: StickType::control_stick_only
+        stick_type: StickType::Control_Stick_Only
     };
     per_input_vec.push(blank_input);
 
@@ -184,7 +179,7 @@ pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw
 pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
     per_input_vec[input].step = 0;
     per_input_vec[input].life = 0;
@@ -195,9 +190,9 @@ pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, 
 pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
-    let last_update_frame = &mut motion_input_storage[entry_id].2;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
+    let last_update_frame = &mut MOTION_INPUT_STORAGE[entry_id].2;
 
     *per_dir_vec = Vec::new();
     *per_input_vec = Vec::new();
@@ -210,7 +205,7 @@ pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
 /// for raging demon style inputs its best to change this to 20 
 pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
 
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
     per_input_vec[input].defualt_life = new_life;
 
@@ -254,7 +249,7 @@ pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
 
 pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Vec<i32>, input_type: InputType, allow_extra_frame: Option<bool>, allow_negative_edge: Option<bool>, allow_c_stick_input: Option<bool>) {
         
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
 
     per_dir_vec[input][step].button = Some(buttons);
     per_dir_vec[input][step].input_type = input_type;
@@ -269,7 +264,7 @@ pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Ve
 /// if you use this its best if you use the RAW version of the `CONTROL_PAD_BUTTON`s
 pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step: usize) {
 
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
 
     per_dir_vec[input][step].require_multiple_pressed_inputs = true;
 }
@@ -277,7 +272,7 @@ pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step
 /// Makes it so that if the motion is done and the buttons are not pressed or vise versa the input will reset
 pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
 
     per_dir_vec[input][step].strict = true;
 }
@@ -287,7 +282,7 @@ pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 /// Defualts to 1 and wont allow any shortcutting
 pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
 
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
     per_input_vec[input].max_shortcuts = new_max_shortcuts;
 
@@ -296,7 +291,7 @@ pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts
 /// Allows the input to check the next input in the series on the same frame
 pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
 
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
     
     for step in steps {
         
@@ -309,7 +304,7 @@ pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
 pub unsafe fn get_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> u8 {
     
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
     per_input_vec[input].step
 
@@ -319,7 +314,7 @@ pub unsafe fn get_step(module_accessor:*mut BattleObjectModuleAccessor, input: u
 pub unsafe fn get_life(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> u8 {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
     per_input_vec[input].life
 
@@ -329,8 +324,8 @@ pub unsafe fn get_life(module_accessor:*mut BattleObjectModuleAccessor, input: u
 pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> bool {
     
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
     let step = per_input_vec[input].step as usize;
     let final_step = per_dir_vec[input].len() - 1;
 
@@ -349,7 +344,7 @@ pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input
 /// by default its set to control_stick_only
 pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
     
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
     per_input_vec[input].stick_type = new_stick_type;
 
@@ -371,7 +366,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
     
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let last_update_frame = &mut motion_input_storage[entry_id].2;
+    let last_update_frame = &mut MOTION_INPUT_STORAGE[entry_id].2;
     
 
     if frame == *last_update_frame && !ignore_repeat_frame {
@@ -387,18 +382,18 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
     }
 
     
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
 
 
     for inputs in 0 .. per_input_vec.len() {
 
         let max_shortcuts = per_input_vec[inputs].max_shortcuts;
         let input_stick_type = per_input_vec[inputs].stick_type;
-        let is_cstick = (input_stick_type == StickType::c_stick_only && ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) ) || input_stick_type != StickType::c_stick_only;
-        let is_main_stick = (input_stick_type == StickType::control_stick_only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON)) || input_stick_type != StickType::control_stick_only;
+        let is_cstick = (input_stick_type == StickType::C_Stick_Only && ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) ) || input_stick_type != StickType::C_Stick_Only;
+        let is_main_stick = (input_stick_type == StickType::Control_Stick_Only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON)) || input_stick_type != StickType::Control_Stick_Only;
 
-        if input_stick_type == StickType::both || is_cstick && is_main_stick {
+        if input_stick_type == StickType::Both || is_cstick && is_main_stick {
             
             for _ in 0 .. max_shortcuts {
 
@@ -408,8 +403,6 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                 let is_raw_input = per_dir_vec[inputs][step as usize].is_raw;
                 let dirs = per_dir_vec[inputs][step as usize].direction.clone();
                 let raw_dirs = per_dir_vec[inputs][step as usize].raw_direction.clone();
-                let input_type = per_dir_vec[inputs][step as usize].input_type;
-                let require_multiple_pressed_inputs = per_dir_vec[inputs][step as usize].require_multiple_pressed_inputs;
                 let is_missed_strict_timing = is_motion_correct(module_accessor, dirs.clone(), raw_dirs.clone(), is_raw_input, inputs) && !is_buttons_correct(module_accessor, inputs) || !is_motion_correct(module_accessor, dirs.clone(), raw_dirs.clone(), is_raw_input, inputs) && is_buttons_correct(module_accessor, inputs);
 
                 if per_input_vec[inputs].life == 0 && ( !is_complete(module_accessor, inputs) || is_complete(module_accessor, inputs) && CancelModule::is_enable_cancel(module_accessor) ) {
@@ -453,7 +446,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
     for index in 0 .. per_input_vec.len() {
         if per_input_vec[index].life > 0 {
@@ -469,8 +462,7 @@ unsafe fn is_motion_correct(module_accessor:*mut BattleObjectModuleAccessor, mot
     let input_dir = CommandInputModule::get_stick_dir(module_accessor);
     let raw_input_dir = CommandInputModule::get_stick_dir_raw(module_accessor);
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
     let raw_null = InputDirectionRaw::NULL;
 
     if !is_raw && motion_vec.contains(&input_dir) || is_raw && raw_motion_vec.contains(&raw_input_dir) {
@@ -492,15 +484,15 @@ unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, in
 
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_dir_vec = &mut motion_input_storage[entry_id].1;
-    let per_input_vec = &mut motion_input_storage[entry_id].0;
+    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
+    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
     let step = per_input_vec[input].step as usize;
 
     let input_type = per_dir_vec[input][step].input_type;
     let require_multiple_pressed_inputs = per_dir_vec[input][step].require_multiple_pressed_inputs;
 
-    if input_type == InputType::none {
+    if input_type == InputType::None {
 
 
         return true
@@ -535,21 +527,21 @@ unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, in
         */
 
         let mut ret = true;
-        let mut should_continue = true;
+        let mut should_continue;
         for button_index in 0..buttons.len() {
-            if !ControlModule::check_button_off(module_accessor, buttons[button_index]) && input_type == InputType::off {
+            if !ControlModule::check_button_off(module_accessor, buttons[button_index]) && input_type == InputType::Off {
 
                 ret = false;
                 break;
 
             }
-            else if !ControlModule::check_button_on(module_accessor, buttons[button_index]) && input_type == InputType::on {
+            else if !ControlModule::check_button_on(module_accessor, buttons[button_index]) && input_type == InputType::On {
 
                 ret = false;
                 break;
 
             }
-            else if input_type == InputType::perfect {
+            else if input_type == InputType::Perfect {
 
                 should_continue = false;
                 let allow_extra_frame= per_dir_vec[input][step].allow_extra_frame.expect("could not find extra frame bool");
@@ -574,9 +566,8 @@ unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, in
 
                 }
             }
-            else if input_type == InputType::trigger {
+            else if input_type == InputType::Trigger {
                 
-                should_continue = false;
                 if 
                     !ControlModule::check_button_trigger(module_accessor, buttons[button_index]) && 
                     !ControlModule::check_button_on(module_accessor, buttons[button_index]) 
@@ -585,14 +576,9 @@ unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, in
                     break;
 
                 }
-                else {
-                    should_continue = true;
-                }
             }
-            else if input_type == InputType::on_trigger {
+            else if input_type == InputType::On_Trigger  {
                 
-                should_continue = false;
-
                 if 
                     !ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) && 
                     !ControlModule::check_button_on(module_accessor, buttons[button_index]) 
@@ -601,14 +587,9 @@ unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, in
                     break;
 
                 }
-                else {
-                    should_continue = true;
-                }
             }
-            else if input_type == InputType::release {
+            else if input_type == InputType::Release {
                 
-                should_continue = false;
-
                 if 
                     !ControlModule::check_button_release(module_accessor, buttons[button_index]) && 
                     !ControlModule::check_button_off(module_accessor, buttons[button_index]) 
@@ -617,14 +598,9 @@ unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, in
                     break;
 
                 }
-                else {
-                    should_continue = true;
-                }
             }
-            else if input_type == InputType::on_release {
+            else if input_type == InputType::On_Release {
                 
-                should_continue = false;
-
                 if 
                     !ControlModule::check_button_on_release(module_accessor, buttons[button_index]) && 
                     !ControlModule::check_button_off(module_accessor, buttons[button_index]) 
@@ -633,9 +609,6 @@ unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, in
                     break;
 
                 }
-                else {
-                    should_continue = true;
-                }
             }
         }
         return ret
@@ -643,37 +616,37 @@ unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, in
     else {
         for button_index in 0 .. buttons.len() {
             
-            if input_type == InputType::off && ControlModule::check_button_off(module_accessor, buttons[button_index]) {
+            if input_type == InputType::Off && ControlModule::check_button_off(module_accessor, buttons[button_index]) {
 
                 return true
 
             }
-            else if input_type == InputType::on && ControlModule::check_button_on(module_accessor, buttons[button_index]) {
+            else if input_type == InputType::On && ControlModule::check_button_on(module_accessor, buttons[button_index]) {
 
                 return true
 
             }
-            else if input_type == InputType::on_trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) {
+            else if input_type == InputType::On_Trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) {
 
                 return true
                 
             }
-            else if input_type == InputType::on_release && ControlModule::check_button_on_release(module_accessor, buttons[button_index]) {
+            else if input_type == InputType::On_Release && ControlModule::check_button_on_release(module_accessor, buttons[button_index]) {
 
                 return true
 
             }
-            else if input_type == InputType::trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index]) {
+            else if input_type == InputType::Trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index]) {
 
                 return true
 
             }
-            else if input_type == InputType::release && ControlModule::check_button_release(module_accessor, buttons[button_index]) {
+            else if input_type == InputType::Release && ControlModule::check_button_release(module_accessor, buttons[button_index]) {
 
                 return true
 
             }
-            else if input_type == InputType::perfect {
+            else if input_type == InputType::Perfect {
 
                 let allow_extra_frame = per_dir_vec[input][step].allow_extra_frame.expect("unable to find extra frame bool");
                 let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge.expect("unable to find negative edge bool");

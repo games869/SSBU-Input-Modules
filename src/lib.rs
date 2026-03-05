@@ -4,54 +4,38 @@
     proc_macro_hygiene
 )]
 #![allow(
-	static_mut_refs,
-    unused_imports,
-	unused_macros,
-	unused_variables,
-	unused_assignments,
-	unused_unsafe,
-	non_upper_case_globals,
-	non_snake_case,
-	non_camel_case_types,
-    clippy::borrow_interior_mutable_const,
-	ambiguous_glob_reexports,
-    hidden_glob_reexports,
-    dead_code
+    non_snake_case,
+    non_camel_case_types
 )]
 // todo fix all these hidden warnings
 use {
 	smash::{
-	  lua2cpp::*,
-	  phx::*,
-	  app::{sv_animcmd::*, lua_bind::*, *},
-	  lib::{lua_const::*, L2CValue, L2CAgent},
-	  hash40
+	  app::{lua_bind::*, *},
+	  lib::lua_const::*
 	},
-  smash_script::*,
-  smashline::{*, Priority::*},
-  std::{any::type_name, fmt}
+  std::fmt
 };
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 
 pub enum InputType {
     
-    none,
-    on,
-    off,
-    on_trigger,
-    on_release,
-    trigger,
-    release,
-    perfect
+    None,
+    On,
+    Off,
+    On_Trigger,
+    On_Release,
+    Trigger,
+    Release,
+    Perfect
 
 }
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum StickType {
 
-    both,
-    control_stick_only,
-    c_stick_only
+    Both,
+    Control_Stick_Only,
+    C_Stick_Only
     
 }
 
@@ -59,14 +43,14 @@ impl fmt::Display for InputType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             
-            InputType::none => write!(f, "none"),
-            InputType::on  => write!(f, "on"),
-            InputType::off => write!(f, "off"),
-            InputType::on_trigger => write!(f, "on_trigger"),
-            InputType::on_release => write!(f, "on_release"),
-            InputType::trigger => write!(f, "trigger"),
-            InputType::release => write!(f, "release"),
-            InputType::perfect => write!(f, "perfect")
+            InputType::None => write!(f, "none"),
+            InputType::On  => write!(f, "on"),
+            InputType::Off => write!(f, "off"),
+            InputType::On_Trigger => write!(f, "on_trigger"),
+            InputType::On_Release => write!(f, "on_release"),
+            InputType::Trigger => write!(f, "trigger"),
+            InputType::Release => write!(f, "release"),
+            InputType::Perfect => write!(f, "perfect")
             
         }
     }
