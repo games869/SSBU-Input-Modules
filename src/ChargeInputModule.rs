@@ -413,7 +413,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
     let last_update_frame = &mut charge_input_storage[entry_id].2;
     let prev_last_frame = *last_update_frame;
 
-    println!("frame: {frame}, ignore_repeat_frame: {ignore_repeat_frame}, update_charge_time: {update_charge_time}");
+    // println!("frame: {frame}, ignore_repeat_frame: {ignore_repeat_frame}, update_charge_time: {update_charge_time}");
     
     if frame == *last_update_frame && !ignore_repeat_frame {
 
@@ -455,7 +455,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                     if per_input[input].charge_time < per_dir[input][step].required_charge_time {
             
                         per_input[input].charge_time += 1;
-                        println!("new charge: {}", per_input[input].charge_time);
+                        // println!("new charge: {}", per_input[input].charge_time);
 
                     }
                 }
