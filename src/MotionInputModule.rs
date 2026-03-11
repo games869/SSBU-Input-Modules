@@ -51,6 +51,40 @@ static mut MOTION_INPUT_STORAGE: [(Vec<PerInput>, Vec<Vec<PerDir>>, f32); 8] = [
     (Vec::new(), Vec::new(), 0.0)
 ];
 
+unsafe fn is_input_index_safe(entry_id: usize, input: usize, should_panic: bool, fn_name: &str) -> bool {
+
+    let per_input = &MOTION_INPUT_STORAGE[entry_id].0;
+
+    if input >= per_input.len() {
+        let crash_msg = String::from("[inputmodule::MotionInputModule] Error: fn (") + fn_name + ") has bad arguments\ninput len = (" + &per_input.len().to_string() + ") but the index is (" + &input.to_string() + ")";
+        
+        if should_panic { panic!("{}", crash_msg); }
+        else { eprintln!("{}", crash_msg); }
+
+        return false
+
+    }
+
+    true
+}
+
+unsafe fn is_step_index_safe(entry_id: usize, input: usize, step: usize, should_panic: bool, fn_name: &str) -> bool {
+
+    let per_dir = &MOTION_INPUT_STORAGE[entry_id].1;
+
+    if step >= per_dir[input].len() {
+        let crash_msg = String::from("[inputmodule::MotionInputModule] Error: fn (") + fn_name + ") has bad arguments\ninput (" + &input.to_string() + ") step len = (" + &per_dir[input].len().to_string() + ") but the index is (" + &step.to_string() + ")";
+        
+        if should_panic { panic!("{}", crash_msg); }
+        else { eprintln!("{}", crash_msg); }
+
+        return false
+        
+    }
+
+    true
+}
+
 /// Adds a new motion input to the character 
 /// 
 /// # Arguments
@@ -181,6 +215,8 @@ pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
+    if !is_input_index_safe(entry_id, input, false, "reset_input_step") { return; }
+
     per_input_vec[input].step = 0;
     per_input_vec[input].life = 0;
 
@@ -204,6 +240,8 @@ pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
 /// 
 /// for raging demon style inputs its best to change this to 20 
 pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
+
+    if !is_input_index_safe(entry_id, input, true, "change_life") { return; }
 
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
@@ -248,6 +286,8 @@ pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
 /// ``` 
 
 pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Vec<i32>, input_type: InputType, allow_extra_frame: Option<bool>, allow_negative_edge: Option<bool>, allow_c_stick_input: Option<bool>) {
+
+    if !is_input_index_safe(entry_id, input, true, "add_button") || !is_step_index_safe(entry_id, input, step, true, "add_button") { return; }
         
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
 
@@ -264,6 +304,8 @@ pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Ve
 /// if you use this its best if you use the RAW version of the `CONTROL_PAD_BUTTON`s
 pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step: usize) {
 
+    if !is_input_index_safe(entry_id, input, true, "require_simultaneously_buttons") || !is_step_index_safe(entry_id, input, step, true, "require_simultaneously_buttons") { return; }
+
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
 
     per_dir_vec[input][step].require_multiple_pressed_inputs = true;
@@ -271,6 +313,8 @@ pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step
 
 /// Makes it so that if the motion is done and the buttons are not pressed or vise versa the input will reset
 pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
+
+    if !is_input_index_safe(entry_id, input, true, "add_strict") || !is_step_index_safe(entry_id, input, step, true, "add_strict") { return; }
 
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
 
@@ -282,6 +326,8 @@ pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 /// Defualts to 1 and wont allow any shortcutting
 pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
 
+    if !is_input_index_safe(entry_id, input, true, "set_max_shortcuts") { return; }
+
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
     per_input_vec[input].max_shortcuts = new_max_shortcuts;
@@ -291,9 +337,13 @@ pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts
 /// Allows the input to check the next input in the series on the same frame
 pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
 
+    if !is_input_index_safe(entry_id, input, true, "allow_shortcut") { return; }
+
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
     
     for step in steps {
+
+        if !is_step_index_safe(entry_id, input, step, true, "allow_shortcut") { return; }
         
         per_dir_vec[input][step].can_shortcut = true;
 
@@ -306,6 +356,8 @@ pub unsafe fn get_step(module_accessor:*mut BattleObjectModuleAccessor, input: u
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
+    if !is_input_index_safe(entry_id, input, false, "get_step") { return 0; }
+
     per_input_vec[input].step
 
 }
@@ -315,6 +367,8 @@ pub unsafe fn get_life(module_accessor:*mut BattleObjectModuleAccessor, input: u
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
+
+    if !is_input_index_safe(entry_id, input, false, "get_life") { return 0; }
 
     per_input_vec[input].life
 
@@ -328,6 +382,8 @@ pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
     let step = per_input_vec[input].step as usize;
     let final_step = per_dir_vec[input].len() - 1;
+
+    if !is_input_index_safe(entry_id, input, false, "is_complete") { return false; }
 
     if step == final_step {
 
@@ -343,6 +399,8 @@ pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input
 /// 
 /// by default its set to control_stick_only
 pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
+
+    if !is_input_index_safe(entry_id, input, true, "set_stick_type") { return; }
     
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 

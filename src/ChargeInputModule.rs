@@ -1,6 +1,6 @@
 use {
 
-    super::{ *, InputType, StickType, CommandInputModule::{ *, InputDirection::*  }}, 
+    super::{ CommandInputModule::{ InputDirection::*, *  }, InputType, StickType, *}, 
     std::usize,
 }; 
 
@@ -49,6 +49,40 @@ static mut CHARGE_INPUT_STORAGE: [(Vec<PerInput>, Vec<Vec<PerDir>>, f32); 8] = [
     (Vec::new(), Vec::new(), 0.0)
 ];
 
+unsafe fn is_input_index_safe(entry_id: usize, input: usize, should_panic: bool, fn_name: &str) -> bool {
+
+    let per_input = &CHARGE_INPUT_STORAGE[entry_id].0;
+
+    if input >= per_input.len() {
+        let crash_msg = String::from("[inputmodule::ChargeInputModule] Error: fn (") + fn_name + ") has bad arguments\ninput len = (" + &per_input.len().to_string() + ") but the index is (" + &input.to_string() + ")";
+        
+        if should_panic { panic!("{}", crash_msg); }
+        else { eprintln!("{}", crash_msg); }
+
+        return false
+
+    }
+
+    true
+}
+
+unsafe fn is_step_index_safe(entry_id: usize, input: usize, step: usize, should_panic: bool, fn_name: &str) -> bool {
+
+    let per_dir = &CHARGE_INPUT_STORAGE[entry_id].1;
+
+    if step >= per_dir[input].len() {
+        let crash_msg = String::from("[inputmodule::ChargeInputModule] Error: fn (") + fn_name + ") has bad arguments\ninput (" + &input.to_string() + ") step len = (" + &per_dir[input].len().to_string() + ") but the index is (" + &step.to_string() + ")";
+        
+        if should_panic { panic!("{}", crash_msg); }
+        else { eprintln!("{}", crash_msg); }
+
+        return false
+        
+    }
+
+    true
+}
+
 /// Adds a charge input to the Moveset
 /// 
 /// # Arguments
@@ -92,8 +126,6 @@ static mut CHARGE_INPUT_STORAGE: [(Vec<PerInput>, Vec<Vec<PerDir>>, f32); 8] = [
 ///             );
 ///     }
 /// ```
-
-
 pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
     
     vec.push([NULL].to_vec());
@@ -181,6 +213,7 @@ pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Ve
 
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
+    if !is_input_index_safe(entry_id, input, true, "add_button") || !is_step_index_safe(entry_id, input, step, true, "add_button") { return; }
     
     per_dir[input][step].button = Some(buttons);
     per_dir[input][step].input_type = input_type;
@@ -194,6 +227,8 @@ pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Ve
 /// Makes it so if the stick or the buttons are not correct but the other is the input resets
 pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 
+    if !is_input_index_safe(entry_id, input, true, "add_strict") || !is_step_index_safe(entry_id, input, step, true, "add_strict") { return; }
+
     let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
     per_dir_vec[input][step].strict = true;
@@ -201,6 +236,8 @@ pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 
 /// Makes it so you need to hit all the buttons on a given step before you can progress to the next step
 pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step: usize) {
+
+    if !is_input_index_safe(entry_id, input, true, "require_simultaneously_buttons") || !is_step_index_safe(entry_id, input, step, true, "require_simultaneously_buttons") { return; }
 
     let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
@@ -212,6 +249,8 @@ pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step
 /// Defualts to 1 and wont allow any shortcutting
 pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
 
+    if !is_input_index_safe(entry_id, input, true, "set_max_shortcuts") { return; }
+
     let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
     per_input_vec[input].max_shortcuts = new_max_shortcuts;
@@ -221,9 +260,13 @@ pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts
 /// Allows the input to check the next input in the series on the same frame
 pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
 
+    if !is_input_index_safe(entry_id, input, true, "allow_shortcut") { return; }
+
     let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
     
     for step in steps {
+
+       if !is_step_index_safe(entry_id, input, step, true, "allow_shortcut") { return; }
         
         per_dir_vec[input][step].can_shortcut = true;
 
@@ -232,9 +275,11 @@ pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
 
 /// Returns the current step of an input
 pub unsafe fn get_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> u8 {
-    
+
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+
+    if !is_input_index_safe(entry_id, input, false, "get_step") { return 0; }
 
     per_input_vec[input].step
 
@@ -246,6 +291,8 @@ pub unsafe fn get_life(module_accessor:*mut BattleObjectModuleAccessor, input: u
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
+    if !is_input_index_safe(entry_id, input, false, "get_life") { return 0; }
+
     per_input_vec[input].life
 
 }
@@ -255,6 +302,8 @@ pub unsafe fn get_charge_time(module_accessor:*mut BattleObjectModuleAccessor, i
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+
+    if !is_input_index_safe(entry_id, input, false, "get_charge_time") { return 0; }
 
     per_input_vec[input].charge_time
 
@@ -267,6 +316,9 @@ pub unsafe fn is_complete(entry_id: usize, input: usize) -> bool {
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
     let step = per_input[input].step as usize;
     let final_step = per_dir[input].len() - 2;
+
+    if !is_input_index_safe(entry_id, input, false, "is_complete") { return false; }
+
     if step == final_step {
 
         return true
@@ -278,6 +330,8 @@ pub unsafe fn is_complete(entry_id: usize, input: usize) -> bool {
 }
 /// Sets a custom value for how long an input can exist before being reset
 pub unsafe fn set_life(entry_id: usize, input: usize, new_life: u8) {
+
+    if !is_input_index_safe(entry_id, input, true, "set_life") { return; }
 
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
@@ -291,6 +345,8 @@ pub unsafe fn set_life(entry_id: usize, input: usize, new_life: u8) {
 /// Sets a custom value for a specific step for how long an input can exist before being reset
 pub unsafe fn set_specific_life(entry_id: usize, input: usize, step: usize, new_life: u8) {
 
+    if !is_input_index_safe(entry_id, input, true, "set_specific_life") || !is_step_index_safe(entry_id, input, step, true, "set_specific_life") { return; }
+
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
     per_dir[input][step].defualt_life = new_life;
@@ -300,6 +356,8 @@ pub unsafe fn set_specific_life(entry_id: usize, input: usize, step: usize, new_
 /// Sets a custom value for how long you need to hold an input before you can progress to the next
 pub unsafe fn set_charge_time(entry_id: usize, input: usize, step: usize, new_charge_time: u8) {
 
+    if !is_input_index_safe(entry_id, input, true, "set_charge_time") || !is_step_index_safe(entry_id, input, step, true, "set_charge_time") { return; }
+
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
     per_dir[input][step].required_charge_time = new_charge_time;
@@ -308,6 +366,8 @@ pub unsafe fn set_charge_time(entry_id: usize, input: usize, step: usize, new_ch
 
 /// Makes it so when an input is not being held the charge time decrements by 1
 pub unsafe fn regress_with_failed_input(entry_id: usize, input: usize) {
+
+    if !is_input_index_safe(entry_id, input, true, "regress_with_failed_input") { return; }
     
     let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
@@ -319,6 +379,8 @@ pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, 
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+
+    if !is_input_index_safe(entry_id, input, false, "reset_input_step") { return; }
     
     per_input[input].charge_time = 0;
     per_input[input].life = 0;
@@ -328,9 +390,24 @@ pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, 
 /// Makes it so the only way an input can be reset is with ChargeInputModule::reset_input_step
 pub unsafe fn requier_manual_input_kill(entry_id: usize, input: usize) {
 
+    if !is_input_index_safe(entry_id, input, true, "requier_manual_input_kill") { return; }
+
     let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
     per_input[input].requier_manual_input_kill = true;
+
+}
+
+/// Changes which control stick can update the charge inputs
+/// 
+/// by default its set to control_stick_only
+pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
+
+    if !is_input_index_safe(entry_id, input, true, "set_stick_type") { return; }
+    
+    let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+
+    per_input_vec[input].stick_type = new_stick_type;
 
 }
 
@@ -384,17 +461,6 @@ pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
         }
         
     }
-}
-
-/// Changes which control stick can update the charge inputs
-/// 
-/// by default its set to control_stick_only
-pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
-    
-    let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
-
-    per_input_vec[input].stick_type = new_stick_type;
-
 }
 
 ///updates all the charge inputs for that frame 
@@ -962,5 +1028,3 @@ unsafe fn should_progress(module_accessor:*mut BattleObjectModuleAccessor, input
     }
 
 }
-
-//todo ... make the f-ing module @games
