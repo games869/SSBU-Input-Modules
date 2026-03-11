@@ -1,6 +1,6 @@
 use {
 
-    super::{ *, InputType, StickType, CommandInputModule::{ *, InputDirection::*  }}, 
+    super::{ CommandInputModule::{ InputDirection::*, *  }, InputType, StickType, *}, 
     std::usize,
 }; 
 
@@ -49,6 +49,50 @@ static mut CHARGE_INPUT_STORAGE: [(Vec<PerInput>, Vec<Vec<PerDir>>, f32); 8] = [
     (Vec::new(), Vec::new(), 0.0)
 ];
 
+unsafe fn is_input_index_safe(entry_id: usize, input: usize, should_panic: bool, fn_name: &str) -> bool {
+
+    let per_input = &CHARGE_INPUT_STORAGE[entry_id].0;
+
+    if input >= per_input.len() {
+        let crash_msg = String::from("[inputmodule::ChargeInputModule::") + fn_name +"] Error:\nfn has bad arguments\n\ninput len = (" + &per_input.len().to_string() + ") but the index is (" + &input.to_string() + ").\0";
+        
+        if should_panic { 
+
+            skyline::error::show_error(86, "inputmodule Error.\0", &crash_msg);
+            skyline::nn::oe::ExitApplication(); 
+
+        }
+        else { eprintln!("{}", crash_msg); }
+
+        return false
+
+    }
+
+    true
+}
+
+unsafe fn is_step_index_safe(entry_id: usize, input: usize, step: usize, should_panic: bool, fn_name: &str) -> bool {
+
+    let per_dir = &CHARGE_INPUT_STORAGE[entry_id].1;
+
+    if step >= per_dir[input].len() {
+        let crash_msg = String::from("[inputmodule::ChargeInputModule::") + fn_name +"] Error:\nfn has bad arguments\n\ninput (" + &input.to_string() + ") step len = (" + &per_dir[input].len().to_string() + ") but the index is (" + &step.to_string() + ").\0";
+        
+        if should_panic { 
+
+            skyline::error::show_error(87, "inputmodule Error.\0", &crash_msg);
+            skyline::nn::oe::ExitApplication(); 
+
+        }
+        else { eprintln!("{}", crash_msg); }
+
+        return false
+        
+    }
+
+    true
+}
+
 /// Adds a charge input to the Moveset
 /// 
 /// # Arguments
@@ -92,8 +136,6 @@ static mut CHARGE_INPUT_STORAGE: [(Vec<PerInput>, Vec<Vec<PerDir>>, f32); 8] = [
 ///             );
 ///     }
 /// ```
-
-
 pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
     
     vec.push([NULL].to_vec());
@@ -105,7 +147,6 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 
     for i in 0..vec.len() {
 
-        let charge = if i == vec.len() - 2 { 0 } else { DEFUALT_CHARGE_TIME };
         let blank_dir: PerDir = PerDir { 
             direction: vec[i].clone(), 
             button: None, 
@@ -116,7 +157,7 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
             require_multiple_pressed_inputs: false, 
             strict: false, 
             defualt_life: DEFUALT_LIFE, 
-            required_charge_time: charge,
+            required_charge_time: DEFUALT_CHARGE_TIME,
             can_shortcut: false
         };
 
@@ -127,8 +168,8 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 
     let blank_input:PerInput = PerInput { 
         step: 0, 
-        life: DEFUALT_LIFE, 
-        charge_time: DEFUALT_CHARGE_TIME,
+        life: 0, 
+        charge_time: 0,
         requier_manual_input_kill: false,
         regress_with_failed_input: false,
         stick_type: StickType::Control_Stick_Only,
@@ -182,6 +223,7 @@ pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Ve
 
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
+    if !is_input_index_safe(entry_id, input, true, "add_button") || !is_step_index_safe(entry_id, input, step, true, "add_button") { return; }
     
     per_dir[input][step].button = Some(buttons);
     per_dir[input][step].input_type = input_type;
@@ -195,6 +237,8 @@ pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Ve
 /// Makes it so if the stick or the buttons are not correct but the other is the input resets
 pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 
+    if !is_input_index_safe(entry_id, input, true, "add_strict") || !is_step_index_safe(entry_id, input, step, true, "add_strict") { return; }
+
     let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
     per_dir_vec[input][step].strict = true;
@@ -202,6 +246,8 @@ pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 
 /// Makes it so you need to hit all the buttons on a given step before you can progress to the next step
 pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step: usize) {
+
+    if !is_input_index_safe(entry_id, input, true, "require_simultaneously_buttons") || !is_step_index_safe(entry_id, input, step, true, "require_simultaneously_buttons") { return; }
 
     let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
@@ -213,6 +259,8 @@ pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step
 /// Defualts to 1 and wont allow any shortcutting
 pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
 
+    if !is_input_index_safe(entry_id, input, true, "set_max_shortcuts") { return; }
+
     let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
     per_input_vec[input].max_shortcuts = new_max_shortcuts;
@@ -222,9 +270,13 @@ pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts
 /// Allows the input to check the next input in the series on the same frame
 pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
 
+    if !is_input_index_safe(entry_id, input, true, "allow_shortcut") { return; }
+
     let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
     
     for step in steps {
+
+       if !is_step_index_safe(entry_id, input, step, true, "allow_shortcut") { return; }
         
         per_dir_vec[input][step].can_shortcut = true;
 
@@ -233,9 +285,11 @@ pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
 
 /// Returns the current step of an input
 pub unsafe fn get_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> u8 {
-    
+
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+
+    if !is_input_index_safe(entry_id, input, false, "get_step") { return 0; }
 
     per_input_vec[input].step
 
@@ -247,6 +301,8 @@ pub unsafe fn get_life(module_accessor:*mut BattleObjectModuleAccessor, input: u
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
+    if !is_input_index_safe(entry_id, input, false, "get_life") { return 0; }
+
     per_input_vec[input].life
 
 }
@@ -256,6 +312,8 @@ pub unsafe fn get_charge_time(module_accessor:*mut BattleObjectModuleAccessor, i
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+
+    if !is_input_index_safe(entry_id, input, false, "get_charge_time") { return 0; }
 
     per_input_vec[input].charge_time
 
@@ -268,6 +326,9 @@ pub unsafe fn is_complete(entry_id: usize, input: usize) -> bool {
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
     let step = per_input[input].step as usize;
     let final_step = per_dir[input].len() - 2;
+
+    if !is_input_index_safe(entry_id, input, false, "is_complete") { return false; }
+
     if step == final_step {
 
         return true
@@ -279,6 +340,8 @@ pub unsafe fn is_complete(entry_id: usize, input: usize) -> bool {
 }
 /// Sets a custom value for how long an input can exist before being reset
 pub unsafe fn set_life(entry_id: usize, input: usize, new_life: u8) {
+
+    if !is_input_index_safe(entry_id, input, true, "set_life") { return; }
 
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
@@ -292,6 +355,8 @@ pub unsafe fn set_life(entry_id: usize, input: usize, new_life: u8) {
 /// Sets a custom value for a specific step for how long an input can exist before being reset
 pub unsafe fn set_specific_life(entry_id: usize, input: usize, step: usize, new_life: u8) {
 
+    if !is_input_index_safe(entry_id, input, true, "set_specific_life") || !is_step_index_safe(entry_id, input, step, true, "set_specific_life") { return; }
+
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
     per_dir[input][step].defualt_life = new_life;
@@ -301,6 +366,8 @@ pub unsafe fn set_specific_life(entry_id: usize, input: usize, step: usize, new_
 /// Sets a custom value for how long you need to hold an input before you can progress to the next
 pub unsafe fn set_charge_time(entry_id: usize, input: usize, step: usize, new_charge_time: u8) {
 
+    if !is_input_index_safe(entry_id, input, true, "set_charge_time") || !is_step_index_safe(entry_id, input, step, true, "set_charge_time") { return; }
+
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
     per_dir[input][step].required_charge_time = new_charge_time;
@@ -309,6 +376,8 @@ pub unsafe fn set_charge_time(entry_id: usize, input: usize, step: usize, new_ch
 
 /// Makes it so when an input is not being held the charge time decrements by 1
 pub unsafe fn regress_with_failed_input(entry_id: usize, input: usize) {
+
+    if !is_input_index_safe(entry_id, input, true, "regress_with_failed_input") { return; }
     
     let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
@@ -320,6 +389,8 @@ pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, 
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+
+    if !is_input_index_safe(entry_id, input, false, "reset_input_step") { return; }
     
     per_input[input].charge_time = 0;
     per_input[input].life = 0;
@@ -329,9 +400,24 @@ pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, 
 /// Makes it so the only way an input can be reset is with ChargeInputModule::reset_input_step
 pub unsafe fn requier_manual_input_kill(entry_id: usize, input: usize) {
 
+    if !is_input_index_safe(entry_id, input, true, "requier_manual_input_kill") { return; }
+
     let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
     per_input[input].requier_manual_input_kill = true;
+
+}
+
+/// Changes which control stick can update the charge inputs
+/// 
+/// by default its set to control_stick_only
+pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
+
+    if !is_input_index_safe(entry_id, input, true, "set_stick_type") { return; }
+    
+    let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+
+    per_input_vec[input].stick_type = new_stick_type;
 
 }
 
@@ -369,33 +455,22 @@ pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
     let stick_dir = CommandInputModule::get_stick_dir(module_accessor);
 
-    for index in 0 .. per_input.len() {
+    for input in 0 .. per_input.len() {
 
-        let step = per_input[index].step as usize;
+        let step = per_input[input].step as usize;
 
-        if per_input[index].life > 0 && !per_dir[index][step].direction.contains(&stick_dir) {
+        if per_input[input].life > 0 && !((per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input)) {
 
-            per_input[index].life -= 1;
+            per_input[input].life -= 1;
 
         }
-        else if per_dir[index][step].direction.contains(&stick_dir) {
+        else if (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input) {
 
-            per_input[index].life = per_dir[index][step].defualt_life;
+            per_input[input].life = per_dir[input][step].defualt_life;
 
         }
         
     }
-}
-
-/// Changes which control stick can update the charge inputs
-/// 
-/// by default its set to control_stick_only
-pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
-    
-    let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
-
-    per_input_vec[input].stick_type = new_stick_type;
-
 }
 
 ///updates all the charge inputs for that frame 
@@ -431,26 +506,47 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
         let is_cstick = (input_stick_type == StickType::C_Stick_Only && ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) ) || input_stick_type != StickType::C_Stick_Only;
         let is_main_stick = (input_stick_type == StickType::Control_Stick_Only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON)) || input_stick_type != StickType::Control_Stick_Only;
         let max_shortcuts = per_input[input].max_shortcuts;
+        let regress_mod: u8 = 
+            if per_input[input].regress_with_failed_input { per_dir[input][step].defualt_life }
+            else { 0 }
+        ;
 
         if input_stick_type == StickType::Both || is_cstick && is_main_stick {
             for _ in 0 .. max_shortcuts {
-                if life == 0 && !per_input[input].requier_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) {
+                if life == 0 && !per_input[input].requier_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) && !per_input[input].regress_with_failed_input {
+
                     per_input[input].step = 0;
                     per_input[input].charge_time = 0;
 
                 }
 
-                if update_charge_time && (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && step != max_step) {
+                if update_charge_time && ((per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input) && step != max_step) {
 
-                    if per_input[input].charge_time < per_dir[input][step].required_charge_time {
+                    if per_input[input].charge_time < ( per_dir[input][step].required_charge_time + regress_mod ) {
             
                         per_input[input].charge_time += 1;
-                        // println!("new charge: {}", per_input[input].charge_time);
 
                     }
                 }
-                else if !(per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && per_input[input].regress_with_failed_input {
-                    // todo finish buster style charge inputs
+                else if update_charge_time && !(( per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) ) && check_buttons(module_accessor, input)) && per_input[input].regress_with_failed_input {    
+                    if !(check_next_buttons(module_accessor, input) && check_next_charge(module_accessor, input) && step != max_step - 1) {
+                        if per_input[input].charge_time > 0 {
+
+                            per_input[input].charge_time -= 1;
+
+                        }
+                        else if per_input[input].step > 0 && per_input[input].charge_time == 0 {
+
+                            let new_life = per_dir[input][step - 1].defualt_life;
+                        
+                            per_input[input].step -= 1;
+                            per_input[input].life = new_life;
+                            per_input[input].charge_time = DEFUALT_CHARGE_TIME + regress_mod;
+
+
+                        }
+
+                    }
                 }
 
                 if is_missed_strict_timing && per_dir[input][step].strict {
@@ -460,12 +556,13 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                     per_input[input].charge_time = 0;
 
                 }
-                else if check_charge(module_accessor, input) && check_buttons(module_accessor, input) && step != max_step {
+                else if (!per_input[input].regress_with_failed_input && check_charge(module_accessor, input) && check_buttons(module_accessor, input) || per_input[input].regress_with_failed_input && check_next_charge(module_accessor, input) && check_next_buttons(module_accessor, input)) && step != max_step {
                     if should_progress(module_accessor, input) {
-                
+
+                        let new_life = per_dir[input][step + 1].defualt_life;
+                        
                         step += 1;
                         per_input[input].step = step as u8;
-                        let new_life = per_dir[input][step].defualt_life;
                         per_input[input].life = new_life;
                         per_input[input].charge_time = 0;
 
@@ -502,6 +599,24 @@ unsafe fn check_charge(module_accessor:*mut BattleObjectModuleAccessor, input: u
 
     false
 }
+
+unsafe fn check_next_charge(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> bool {
+    
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+    let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+    let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
+    let step = per_input[input].step as usize;
+    let stick_dir = CommandInputModule::get_stick_dir(module_accessor);
+
+    if per_input[input].charge_time >= per_dir[input][step].required_charge_time && (per_dir[input][step + 1].direction.contains(&stick_dir) || per_dir[input][step + 1].direction.contains(&NULL)) {
+
+        return true
+
+    }
+
+    false
+}
+
 unsafe fn check_buttons(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> bool {
 
 
@@ -510,6 +625,200 @@ unsafe fn check_buttons(module_accessor:*mut BattleObjectModuleAccessor, input: 
     let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
     let step = per_input_vec[input].step as usize;
+
+    let input_type = per_dir_vec[input][step].input_type;
+    let require_multiple_pressed_inputs = per_dir_vec[input][step].require_multiple_pressed_inputs;
+
+    if input_type == InputType::None {
+
+
+        return true
+
+    }
+    else {
+
+    let buttons = per_dir_vec[input][step].button.clone().expect("could not find buttons to check");
+
+    if require_multiple_pressed_inputs {
+
+        /*
+
+        this is gonna be painfull to code im srry future me 
+
+        what needs to happen
+
+            off 
+                while input is off dont break(done)
+            on 
+                while input is on dont break(done)
+            on_trigger
+                if input is on_trigger && other inputs are on dont break
+            on_release
+                if input is on_release && other inputs are off dont break
+            trigger
+                if input is trigger && other inputs are on dont break
+            release
+                if input is release && other inputs are off dont break
+            perfect
+                if inputes are perfect dont break(done)
+        */
+
+        let mut ret = true;
+        let mut should_continue;
+        for button_index in 0..buttons.len() {
+            if !ControlModule::check_button_off(module_accessor, buttons[button_index]) && input_type == InputType::Off {
+
+                ret = false;
+                break;
+
+            }
+            else if !ControlModule::check_button_on(module_accessor, buttons[button_index]) && input_type == InputType::On {
+
+                ret = false;
+                break;
+
+            }
+            else if input_type == InputType::Perfect {
+
+                should_continue = false;
+                let allow_extra_frame= per_dir_vec[input][step].allow_extra_frame.expect("could not find extra frame bool");
+                let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge.expect("could not find negative edge bool");
+                let allow_cstick_perfect = per_dir_vec[input][step].allow_c_stick_input.expect("could not find c-stick perfect bool");
+
+                for dir_index in 0 .. per_dir_vec[input][step].direction.len() {
+                    
+                    let dir = per_dir_vec[input][step].direction[dir_index];
+                    
+                    if CommandInputModule::is_perfect_input(module_accessor, buttons[button_index], dir, allow_extra_frame, allow_negative_edge, allow_cstick_perfect) {
+                        
+                        should_continue = true;
+
+                    }
+                }
+
+                if !should_continue {
+
+                    ret = false;
+                    break;
+
+                }
+            }
+            else if input_type == InputType::Trigger {
+                
+                if 
+                    !ControlModule::check_button_trigger(module_accessor, buttons[button_index]) && 
+                    !ControlModule::check_button_on(module_accessor, buttons[button_index]) 
+                {
+                    ret = false;
+                    break;
+
+                }
+            }
+            else if input_type == InputType::On_Trigger {
+                
+
+                if 
+                    !ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) && 
+                    !ControlModule::check_button_on(module_accessor, buttons[button_index]) 
+                {
+                    ret = false;
+                    break;
+
+                }
+            }
+            else if input_type == InputType::Release {
+                
+                if 
+                    !ControlModule::check_button_release(module_accessor, buttons[button_index]) && 
+                    !ControlModule::check_button_off(module_accessor, buttons[button_index]) 
+                {
+                    ret = false;
+                    break;
+
+                }
+            }
+            else if input_type == InputType::On_Release {
+                
+                if 
+                    !ControlModule::check_button_on_release(module_accessor, buttons[button_index]) && 
+                    !ControlModule::check_button_off(module_accessor, buttons[button_index]) 
+                {
+                    ret = false;
+                    break;
+
+                }
+            }
+        }
+        return ret
+    }
+    else {
+        for button_index in 0 .. buttons.len() {
+            
+            if input_type == InputType::Off && ControlModule::check_button_off(module_accessor, buttons[button_index]) {
+
+                return true
+
+            }
+            else if input_type == InputType::On && ControlModule::check_button_on(module_accessor, buttons[button_index]) {
+
+                return true
+
+            }
+            else if input_type == InputType::On_Trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) {
+
+                return true
+                
+            }
+            else if input_type == InputType::On_Release && ControlModule::check_button_on_release(module_accessor, buttons[button_index]) {
+
+                return true
+
+            }
+            else if input_type == InputType::Trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index]) {
+
+                return true
+
+            }
+            else if input_type == InputType::Release && ControlModule::check_button_release(module_accessor, buttons[button_index]) {
+
+                return true
+
+            }
+            else if input_type == InputType::Perfect {
+
+                let allow_extra_frame = per_dir_vec[input][step].allow_extra_frame.expect("unable to find extra frame bool");
+                let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge.expect("unable to find negative edge bool");
+                let allow_cstick_perfect = per_dir_vec[input][step].allow_c_stick_input.expect("unable to find c-stick input bool");
+
+                for dir_index in 0 .. per_dir_vec[input][step].direction.len() {
+
+                    let dir = per_dir_vec[input][step].direction[dir_index];
+
+                    if CommandInputModule::is_perfect_input(module_accessor, buttons[button_index], dir, allow_extra_frame, allow_negative_edge, allow_cstick_perfect) {
+                        
+                        return true
+
+                    }
+                }
+            }
+        }
+    }
+
+    }
+    
+
+    false
+
+}
+
+unsafe fn check_next_buttons(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> bool {
+
+
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+    let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
+    let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+
+    let step = per_input_vec[input].step as usize + 1;
 
     let input_type = per_dir_vec[input][step].input_type;
     let require_multiple_pressed_inputs = per_dir_vec[input][step].require_multiple_pressed_inputs;
@@ -729,195 +1038,3 @@ unsafe fn should_progress(module_accessor:*mut BattleObjectModuleAccessor, input
     }
 
 }
-
-unsafe fn check_next_buttons(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> bool {
-
-
-    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
-    let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
-
-    let step = (per_input_vec[input].step + 1) as usize;
-
-    let input_type = per_dir_vec[input][step].input_type;
-    let require_multiple_pressed_inputs = per_dir_vec[input][step].require_multiple_pressed_inputs;
-
-    if input_type == InputType::None {
-
-
-        return true
-
-    }
-    else {
-
-        let buttons = per_dir_vec[input][step].button.clone().expect("could not find buttons to check");
-
-        if require_multiple_pressed_inputs {
-
-        /*
-
-        this is gonna be painfull to code im srry future me 
-
-        what needs to happen
-
-            off 
-                while input is off dont break(done)
-            on 
-                while input is on dont break(done)
-            on_trigger
-                if input is on_trigger && other inputs are on dont break
-            on_release
-                if input is on_release && other inputs are off dont break
-            trigger
-                if input is trigger && other inputs are on dont break
-            release
-                if input is release && other inputs are off dont break
-            perfect
-                if inputes are perfect dont break(done)
-        */
-
-            let mut ret = true;
-            let mut should_continue;
-            for button_index in 0..buttons.len() {
-                if !ControlModule::check_button_off(module_accessor, buttons[button_index]) && input_type == InputType::Off {
-
-                    ret = false;
-                    break;
-
-                }
-                else if !ControlModule::check_button_on(module_accessor, buttons[button_index]) && input_type == InputType::On {
-
-                    ret = false;
-                    break;
-
-                }
-                else if input_type == InputType::Perfect {
-
-                    should_continue = false;
-                    let allow_extra_frame= per_dir_vec[input][step].allow_extra_frame.expect("could not find extra frame bool");
-                    let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge.expect("could not find negative edge bool");
-                    let allow_cstick_perfect = per_dir_vec[input][step].allow_c_stick_input.expect("could not find c-stick perfect bool");
-
-                    for dir_index in 0 .. per_dir_vec[input][step].direction.len() {
-                    
-                        let dir = per_dir_vec[input][step].direction[dir_index];
-                    
-                        if CommandInputModule::is_perfect_input(module_accessor, buttons[button_index], dir, allow_extra_frame, allow_negative_edge, allow_cstick_perfect) {
-                        
-                            should_continue = true;
-
-                        }
-                    }
-
-                    if !should_continue {
-
-                        ret = false;
-                        break;
-
-                    }
-                }
-                else if input_type == InputType::Trigger {
-                
-                    if 
-                        !ControlModule::check_button_trigger(module_accessor, buttons[button_index]) && 
-                        !ControlModule::check_button_on(module_accessor, buttons[button_index]) 
-                    {
-                        ret = false;
-                        break;
-
-                    }
-                }
-                else if input_type == InputType::On_Trigger {
-                    
-                    if 
-                        !ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) && 
-                        !ControlModule::check_button_on(module_accessor, buttons[button_index]) 
-                    {
-                        ret = false;
-                        break;
-
-                    }
-                }
-                else if input_type == InputType::Release {
-                
-                    if 
-                        !ControlModule::check_button_release(module_accessor, buttons[button_index]) && 
-                        !ControlModule::check_button_off(module_accessor, buttons[button_index]) 
-                    {
-                        ret = false;
-                        break;
-
-                    }
-                }
-                else if input_type == InputType::On_Release {
-                
-                    if 
-                        !ControlModule::check_button_on_release(module_accessor, buttons[button_index]) && 
-                        !ControlModule::check_button_off(module_accessor, buttons[button_index]) 
-                    {
-                        ret = false;
-                        break;
-
-                    }
-                }
-            }
-            return ret
-        }
-        else {
-            for button_index in 0 .. buttons.len() {
-            
-                if input_type == InputType::Off && ControlModule::check_button_off(module_accessor, buttons[button_index]) {
-
-                    return true
-
-                }
-                else if input_type == InputType::On && ControlModule::check_button_on(module_accessor, buttons[button_index]) {
-
-                    return true
-
-                }
-                else if input_type == InputType::On_Trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) {
-
-                    return true
-                
-                }
-                else if input_type == InputType::On_Release && ControlModule::check_button_on_release(module_accessor, buttons[button_index]) {
-
-                    return true
-
-                }
-                else if input_type == InputType::Trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index]) {
-
-                    return true
-
-                }
-                else if input_type == InputType::Release && ControlModule::check_button_release(module_accessor, buttons[button_index]) {
-
-                    return true
-
-                }
-                else if input_type == InputType::Perfect {
-
-                    let allow_extra_frame = per_dir_vec[input][step].allow_extra_frame.expect("unable to find extra frame bool");
-                    let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge.expect("unable to find negative edge bool");
-                    let allow_cstick_perfect = per_dir_vec[input][step].allow_c_stick_input.expect("unable to find c-stick input bool");
-
-                    for dir_index in 0 .. per_dir_vec[input][step].direction.len() {
-
-                        let dir = per_dir_vec[input][step].direction[dir_index];
-
-                        if CommandInputModule::is_perfect_input(module_accessor, buttons[button_index], dir, allow_extra_frame, allow_negative_edge, allow_cstick_perfect) {
-                        
-                            return true
-
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    false
-
-}
-//todo ... make the f-ing module @games
