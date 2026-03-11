@@ -453,9 +453,22 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                     }
                 }
                 else if update_charge_time && !(( per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) ) && check_buttons(module_accessor, input)) && per_input[input].regress_with_failed_input {    
-                    if !(check_next_buttons(module_accessor, input) && check_next_charge(module_accessor, input) && step != max_step - 1) && per_input[input].charge_time > 0 {
+                    if !(check_next_buttons(module_accessor, input) && check_next_charge(module_accessor, input) && step != max_step - 1) {
+                        if per_input[input].charge_time > 0 {
 
-                        per_input[input].charge_time -= 1;
+                            per_input[input].charge_time -= 1;
+
+                        }
+                        else {
+
+                            let new_life = per_dir[input][step - 1].defualt_life;
+                        
+                            per_input[input].step -= 1;
+                            per_input[input].life = new_life;
+                            per_input[input].charge_time = DEFUALT_CHARGE_TIME + regress_mod;
+
+
+                        }
 
                     }
                 }
@@ -470,7 +483,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                 else if (!per_input[input].regress_with_failed_input && check_charge(module_accessor, input) && check_buttons(module_accessor, input) || per_input[input].regress_with_failed_input && check_next_charge(module_accessor, input) && check_next_buttons(module_accessor, input)) && step != max_step {
                     if should_progress(module_accessor, input) {
 
-                        let new_life = per_dir[input][step].defualt_life;
+                        let new_life = per_dir[input][step + 1].defualt_life;
                         
                         step += 1;
                         per_input[input].step = step as u8;
