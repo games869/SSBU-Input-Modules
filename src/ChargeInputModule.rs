@@ -444,12 +444,12 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
                 }
 
-                if update_charge_time && (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && step != max_step) {
+                if update_charge_time && (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && check_buttons(module_accessor, input) && step != max_step) {
 
-                    if per_input[input].charge_time < per_dir[input][step].required_charge_time + regress_mod {
+                    if per_input[input].charge_time < ( per_dir[input][step].required_charge_time + regress_mod ) {
             
                         per_input[input].charge_time += 1;
-                        // println!("new charge: {}", per_input[input].charge_time);
+                        if input == 2 { println!("new charge: {}", per_input[input].charge_time); }
 
                     }
                 }
@@ -458,6 +458,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                         if !check_next_buttons(module_accessor, input) || !check_next_charge(module_accessor, input) {
 
                             per_input[input].charge_time -= 1;
+                            if input == 2 { println!("new charge: {}", per_input[input].charge_time); }
 
                         }
                     }
@@ -472,7 +473,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                 }
                 else if (!per_input[input].regress_with_failed_input && check_charge(module_accessor, input) && check_buttons(module_accessor, input) || per_input[input].regress_with_failed_input && check_next_charge(module_accessor, input) && check_next_buttons(module_accessor, input)) && step != max_step {
                     if should_progress(module_accessor, input) {
-                        
+
                         let new_life = per_dir[input][step].defualt_life;
                         
                         step += 1;
