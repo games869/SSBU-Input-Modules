@@ -369,18 +369,18 @@ pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
     let stick_dir = CommandInputModule::get_stick_dir(module_accessor);
 
-    for index in 0 .. per_input.len() {
+    for input in 0 .. per_input.len() {
 
-        let step = per_input[index].step as usize;
+        let step = per_input[input].step as usize;
 
-        if per_input[index].life > 0 && !per_dir[index][step].direction.contains(&stick_dir) {
+        if per_input[input].life > 0 && !((per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input)) {
 
-            per_input[index].life -= 1;
+            per_input[input].life -= 1;
 
         }
-        else if per_dir[index][step].direction.contains(&stick_dir) {
+        else if (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input) {
 
-            per_input[index].life = per_dir[index][step].defualt_life;
+            per_input[input].life = per_dir[input][step].defualt_life;
 
         }
         
@@ -446,7 +446,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
                 if input == 2 { println!("is_dir: {} is button: {}, max_step: {max_step}", (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)), check_buttons(module_accessor, input))}
 
-                if update_charge_time && (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && check_buttons(module_accessor, input) && step != max_step) {
+                if update_charge_time && ((per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input) && step != max_step) {
 
                     if per_input[input].charge_time < ( per_dir[input][step].required_charge_time + regress_mod ) {
             
