@@ -60,7 +60,7 @@ unsafe fn is_input_index_safe(entry_id: usize, input: usize, should_panic: bool,
         
         if should_panic { 
 
-            skyline::error::show_error(89, "inputmodule error, press Details.\0", &crash_msg);
+            skyline::error::show_error(69, "inputmodule error, press Details.\0", &crash_msg);
             skyline::nn::oe::ExitApplication(); 
             
         }
@@ -82,7 +82,7 @@ unsafe fn is_step_index_safe(entry_id: usize, input: usize, step: usize, should_
         
         if should_panic { 
 
-            skyline::error::show_error(89, "inputmodule error, press Details.\0", &crash_msg);
+            skyline::error::show_error(69, "inputmodule error, press Details.\0", &crash_msg);
             skyline::nn::oe::ExitApplication(); 
             
         }
