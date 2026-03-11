@@ -444,12 +444,14 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
                 }
 
+                if input == 2 { println!("is_dir: {} is button: {}, max_step: {max_step}", (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)), check_buttons(module_accessor, input))}
+
                 if update_charge_time && (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) && check_buttons(module_accessor, input) && step != max_step) {
 
                     if per_input[input].charge_time < ( per_dir[input][step].required_charge_time + regress_mod ) {
             
                         per_input[input].charge_time += 1;
-                        if input == 2 { println!("new charge: {}", per_input[input].charge_time); }
+                        if input == 2 { println!("new charge (inc): {}", per_input[input].charge_time); }
 
                     }
                 }
@@ -458,7 +460,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                         if !check_next_buttons(module_accessor, input) || !check_next_charge(module_accessor, input) {
 
                             per_input[input].charge_time -= 1;
-                            if input == 2 { println!("new charge: {}", per_input[input].charge_time); }
+                            if input == 2 { println!("new charge (dec): {}", per_input[input].charge_time); }
 
                         }
                     }
