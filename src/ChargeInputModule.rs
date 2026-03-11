@@ -444,8 +444,6 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
                 }
 
-                if input == 2 { println!("is_dir: {} is button: {}, max_step: {max_step}", (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)), check_buttons(module_accessor, input))}
-
                 if update_charge_time && ((per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input) && step != max_step) {
 
                     if per_input[input].charge_time < ( per_dir[input][step].required_charge_time + regress_mod ) {
@@ -455,15 +453,10 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                     }
                 }
                 else if update_charge_time && !(( per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) ) && check_buttons(module_accessor, input)) && per_input[input].regress_with_failed_input {    
-                    if input == 2 { println!("dec step 1"); }                
-                    if !(check_next_buttons(module_accessor, input) && check_next_charge(module_accessor, input) && step != max_step) && per_input[input].charge_time > 0 {
+                    if !(check_next_buttons(module_accessor, input) && check_next_charge(module_accessor, input) && step != max_step - 1) && per_input[input].charge_time > 0 {
 
                         per_input[input].charge_time -= 1;
-                        if input == 2 { println!("new charge (dec): {}", per_input[input].charge_time); }
 
-                    }
-                    else {
-                        println!("next_buttons: {}, next charge: {}", check_next_buttons(module_accessor, input), check_next_charge(module_accessor, input));
                     }
                 }
 
