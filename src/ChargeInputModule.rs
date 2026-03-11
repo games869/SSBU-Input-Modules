@@ -54,7 +54,7 @@ unsafe fn is_input_index_safe(entry_id: usize, input: usize, should_panic: bool,
     let per_input = &CHARGE_INPUT_STORAGE[entry_id].0;
 
     if input >= per_input.len() {
-        let crash_msg = String::from("[inputmodule::ChargeInputModule] Error: fn (") + fn_name + ") has bad arguments\ninput len = (" + &per_input.len().to_string() + ") but the index is (" + &input.to_string() + ")";
+        let crash_msg = String::from("[inputmodule::ChargeInputModule::") + fn_name +"()] Error: fn has bad arguments\ninput len = (" + &per_input.len().to_string() + ") but the index is (" + &input.to_string() + ")";
         
         if should_panic { panic!("{}", crash_msg); }
         else { eprintln!("{}", crash_msg); }
