@@ -459,7 +459,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                             per_input[input].charge_time -= 1;
 
                         }
-                        else {
+                        else if per_input[input].step > 0 && per_input[input].charge_time == 0 {
 
                             let new_life = per_dir[input][step - 1].defualt_life;
                         
