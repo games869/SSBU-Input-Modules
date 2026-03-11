@@ -4,14 +4,8 @@ version = "1.0.0"
 authors = ["games869"]
 edition = "2018"
 
-
 [lib]
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-skyline = { git = "https://github.com/ultimate-research/skyline-rs.git" }
 skyline_smash = { git = "https://github.com/blu-dev/skyline-smash.git", features = ["weak_l2cvalue"] }
-smash_script = { git = "https://github.com/blu-dev/smash-script.git", branch = "development" }
-smashline = { git = "https://github.com/hdr-development/smashline.git" }
-arcropolis-api = { git = "https://github.com/Raytwo/arcropolis_api" }
-lazy_static = "1.5.0"
