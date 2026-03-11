@@ -105,7 +105,6 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 
     for i in 0..vec.len() {
 
-        let charge = DEFUALT_CHARGE_TIME;
         let blank_dir: PerDir = PerDir { 
             direction: vec[i].clone(), 
             button: None, 
@@ -116,7 +115,7 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
             require_multiple_pressed_inputs: false, 
             strict: false, 
             defualt_life: DEFUALT_LIFE, 
-            required_charge_time: charge,
+            required_charge_time: DEFUALT_CHARGE_TIME,
             can_shortcut: false
         };
 
@@ -127,8 +126,8 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 
     let blank_input:PerInput = PerInput { 
         step: 0, 
-        life: DEFUALT_LIFE, 
-        charge_time: DEFUALT_CHARGE_TIME,
+        life: 0, 
+        charge_time: 0,
         requier_manual_input_kill: false,
         regress_with_failed_input: false,
         stick_type: StickType::Control_Stick_Only,
@@ -455,16 +454,15 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
                     }
                 }
-                else if update_charge_time && ( !( per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) ) && per_input[input].regress_with_failed_input ) {
-                    if input == 2 { println!("dec step 1"); }
-                    if !check_buttons(module_accessor, input) || !check_charge(module_accessor, input) && per_input[input].charge_time > 0 {
-                        if input == 2 { println!("dec step 2"); }
-                        if !check_next_buttons(module_accessor, input) || !check_next_charge(module_accessor, input) {
+                else if update_charge_time && !(( per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input)) && per_input[input].regress_with_failed_input {
+                    
+                    if input == 2 { println!("dec step 1"); }                
+                    
+                    if !check_next_buttons(module_accessor, input) || !check_next_charge(module_accessor, input) && per_input[input].charge_time > 0{
 
-                            per_input[input].charge_time -= 1;
-                            if input == 2 { println!("new charge (dec): {}", per_input[input].charge_time); }
+                        per_input[input].charge_time -= 1;
+                        if input == 2 { println!("new charge (dec): {}", per_input[input].charge_time); }
 
-                        }
                     }
                 }
 

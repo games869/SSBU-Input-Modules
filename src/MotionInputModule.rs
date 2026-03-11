@@ -103,7 +103,7 @@ pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 
     let blank_input = PerInput {
         defualt_life: DEFUALT_LIFE,
-        life: DEFUALT_LIFE,
+        life: 0,
         step: 0,
         max_shortcuts: 1,
         stick_type: StickType::Control_Stick_Only
