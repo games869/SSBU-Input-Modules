@@ -56,11 +56,11 @@ unsafe fn is_input_index_safe(entry_id: usize, input: usize, should_panic: bool,
     let per_input = &MOTION_INPUT_STORAGE[entry_id].0;
 
     if input >= per_input.len() {
-        let crash_msg = String::from("[inputmodule::MotionInputModule::") + fn_name +"] Error: fn has bad arguments\ninput len = (" + &per_input.len().to_string() + ") but the index is (" + &input.to_string() + ").\0";
+        let crash_msg = String::from("[inputmodule::MotionInputModule::") + fn_name +"] Error:\nfn has bad arguments\n\ninput len = (" + &per_input.len().to_string() + ") but the index is (" + &input.to_string() + ").\0";
         
         if should_panic { 
 
-            skyline::error::show_error(69, "inputmodule error, press Details.\0", &crash_msg);
+            skyline::error::show_error(89, "inputmodule error, press Details.\0", &crash_msg);
             skyline::nn::oe::ExitApplication(); 
             
         }
@@ -78,11 +78,11 @@ unsafe fn is_step_index_safe(entry_id: usize, input: usize, step: usize, should_
     let per_dir = &MOTION_INPUT_STORAGE[entry_id].1;
 
     if step >= per_dir[input].len() {
-        let crash_msg = String::from("[inputmodule::MotionInputModule::") + fn_name + "] Error: fn has bad arguments\ninput (" + &input.to_string() + ") step len = (" + &per_dir[input].len().to_string() + ") but the index is (" + &step.to_string() + ").\0";
+        let crash_msg = String::from("[inputmodule::MotionInputModule::") + fn_name + "] Error:\nfn has bad arguments\n\ninput (" + &input.to_string() + ") step len = (" + &per_dir[input].len().to_string() + ") but the index is (" + &step.to_string() + ").\0";
         
         if should_panic { 
 
-            skyline::error::show_error(69, "inputmodule error, press Details.\0", &crash_msg);
+            skyline::error::show_error(90, "inputmodule error, press Details.\0", &crash_msg);
             skyline::nn::oe::ExitApplication(); 
             
         }
