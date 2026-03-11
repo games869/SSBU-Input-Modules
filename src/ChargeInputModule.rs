@@ -105,7 +105,7 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 
     for i in 0..vec.len() {
 
-        let charge = if i == vec.len() - 2 { 0 } else { DEFUALT_CHARGE_TIME };
+        let charge = DEFUALT_CHARGE_TIME;
         let blank_dir: PerDir = PerDir { 
             direction: vec[i].clone(), 
             button: None, 
@@ -438,7 +438,8 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
         if input_stick_type == StickType::Both || is_cstick && is_main_stick {
             for _ in 0 .. max_shortcuts {
-                if life == 0 && !per_input[input].requier_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) {
+                if life == 0 && !per_input[input].requier_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) && !per_input[input].regress_with_failed_input {
+
                     per_input[input].step = 0;
                     per_input[input].charge_time = 0;
 
@@ -451,12 +452,13 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                     if per_input[input].charge_time < ( per_dir[input][step].required_charge_time + regress_mod ) {
             
                         per_input[input].charge_time += 1;
-                        if input == 2 { println!("new charge (inc): {}", per_input[input].charge_time); }
 
                     }
                 }
                 else if update_charge_time && ( !( per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) ) && per_input[input].regress_with_failed_input ) {
+                    if input == 2 { println!("dec step 1"); }
                     if !check_buttons(module_accessor, input) || !check_charge(module_accessor, input) && per_input[input].charge_time > 0 {
+                        if input == 2 { println!("dec step 2"); }
                         if !check_next_buttons(module_accessor, input) || !check_next_charge(module_accessor, input) {
 
                             per_input[input].charge_time -= 1;
