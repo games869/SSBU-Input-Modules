@@ -454,7 +454,8 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
                     }
                 }
-                else if update_charge_time && !(( per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input)) && per_input[input].regress_with_failed_input {                    
+                else if update_charge_time && !(( per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) ) && check_buttons(module_accessor, input)) && per_input[input].regress_with_failed_input {    
+                    if input == 2 { println!("dec step 1"); }                
                     if (!check_next_buttons(module_accessor, input) || !check_next_charge(module_accessor, input)) && per_input[input].charge_time > 0 {
 
                         per_input[input].charge_time -= 1;
