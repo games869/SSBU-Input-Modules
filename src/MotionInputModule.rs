@@ -58,7 +58,12 @@ unsafe fn is_input_index_safe(entry_id: usize, input: usize, should_panic: bool,
     if input >= per_input.len() {
         let crash_msg = String::from("[inputmodule::MotionInputModule::") + fn_name +"] Error: fn has bad arguments\ninput len = (" + &per_input.len().to_string() + ") but the index is (" + &input.to_string() + ")";
         
-        if should_panic { panic!("{}", crash_msg); }
+        if should_panic { 
+
+            skyline::error::show_error(89, "inputmodule error, press Details.\0", &crash_msg);
+            skyline::nn::oe::ExitApplication(); 
+            
+        }
         else { eprintln!("{}", crash_msg); }
 
         return false
@@ -75,7 +80,12 @@ unsafe fn is_step_index_safe(entry_id: usize, input: usize, step: usize, should_
     if step >= per_dir[input].len() {
         let crash_msg = String::from("[inputmodule::MotionInputModule::") + fn_name + "] Error: fn has bad arguments\ninput (" + &input.to_string() + ") step len = (" + &per_dir[input].len().to_string() + ") but the index is (" + &step.to_string() + ")";
         
-        if should_panic { panic!("{}", crash_msg); }
+        if should_panic { 
+
+            skyline::error::show_error(89, "inputmodule error, press Details.\0", &crash_msg);
+            skyline::nn::oe::ExitApplication(); 
+            
+        }
         else { eprintln!("{}", crash_msg); }
 
         return false
