@@ -29,9 +29,9 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc-nnsdk"
-version = "0.2.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6823e4bff6dee10a75dfee95afe1c5a7f93a1b99a20013663e0cb04b3a64f867"
+checksum = "ece4a9a361bf75974e2c18b719e8fd501e4e336d7a5db22d077c4f2367a94be9"
 
 [[package]]
 name = "libc-nnsdk"
@@ -110,11 +110,11 @@ dependencies = [
 [[package]]
 name = "skyline_smash"
 version = "0.1.0"
-source = "git+https://github.com/blu-dev/skyline-smash.git#6e9aab5ca6b0a2ca85234c5b35e0477a2afec9c7"
+source = "git+https://github.com/ultimate-research/skyline-smash.git#f22c96bea33663cc45ff7ddaa6a140d5727a7931"
 dependencies = [
  "compile-time-lua-bind-hash",
  "lazy_static",
- "libc-nnsdk 0.2.0",
+ "libc-nnsdk 0.4.0",
  "nnsdk 0.6.1 (git+https://github.com/ultimate-research/nnsdk-rs)",
  "paste",
  "skyline",
