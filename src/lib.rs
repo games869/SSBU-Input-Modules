@@ -1,8 +1,4 @@
 #![crate_name = "inputmodule"]
-#![feature(
-    concat_idents,
-    proc_macro_hygiene
-)]
 #![allow(
     non_snake_case,
     non_camel_case_types
@@ -61,7 +57,7 @@ pub mod CommandInputModule;
 /// A custom module made to make the creation of custom motion intputs easy and simple
 pub mod MotionInputModule;
 
-// A custom module that ... YOU STILL NEED TO CODE @games 
+/// A custom module made to make the creation of custom charge intputs easy and simple
 pub mod ChargeInputModule;
 
 /*
