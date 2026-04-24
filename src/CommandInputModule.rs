@@ -103,10 +103,10 @@ pub static mut BACK_CHARGE_TIME:[i32; 8] = [0; 8];
 pub static mut UP_CHARGE_TIME:[i32; 8] = [0; 8];
 pub static mut FORWARD_CHARGE_TIME:[i32; 8] = [0; 8];
 
-static mut DOWN_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
-static mut BACK_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
-static mut UP_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
-static mut FORWARD_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+pub static mut DOWN_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+pub static mut BACK_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+pub static mut UP_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+pub static mut FORWARD_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
 
 pub static mut DOWN_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
 pub static mut DOWN_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
@@ -159,420 +159,351 @@ impl fmt::Display for InputDirectionRaw {
 
 /// A custom Module made to make the reading inputs easier
 
-    /// returns the general direction of where the control stick is in with fighting game style inputs
-    /// 
-    pub unsafe fn get_stick_dir(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirection {
-        let stick_ang = ControlModule::get_stick_angle(module_accessor).to_degrees();
-        let stick_x = ControlModule::get_stick_x(module_accessor);
-        let stick_y = ControlModule::get_stick_y(module_accessor);
-        let lr = PostureModule::lr(module_accessor);
+/// returns the general direction of where the control stick is in with fighting game style inputs
+/// 
+pub unsafe fn get_stick_dir(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirection {
+    let stick_ang = ControlModule::get_stick_angle(module_accessor).to_degrees();
+    let stick_x = ControlModule::get_stick_x(module_accessor);
+    let stick_y = ControlModule::get_stick_y(module_accessor);
+    let lr = PostureModule::lr(module_accessor);
 
-        if stick_x == 0.0 && stick_y == 0.0 {
-            return InputDirection::NEUTRAL;
-        }
-
-        else if stick_ang > FORWARD_LOW && stick_ang < FORWARD_HIGH {
-            if lr > 0.0 {
-                return InputDirection::FORWARD;
-            }
-            else {
-                return InputDirection::BACK;
-            }
-        }
-
-        else if stick_ang > DOWN_FORWARD_LOW && stick_ang <= DOWN_FORWARD_HIGH {
-            if lr > 0.0 {
-                return InputDirection::DOWN_FORWARD;
-            }
-            else {
-                return InputDirection::DOWN_BACK;
-            }
-        }
-        else if stick_ang > DOWN_LOW && stick_ang <= DOWN_HIGH {
-
-              return InputDirection::DOWN;
-
-        }
-        else if stick_ang > DOWN_BACK_LOW && stick_ang <= DOWN_BACK_HIGH {
-            if lr > 0.0 {
-                return InputDirection::DOWN_BACK;
-            }
-            else {
-                return InputDirection::DOWN_FORWARD;
-            }
-        }
-        else if 
-            stick_ang >= BACK_SUB_LOW && stick_ang <= BACK_LOW
-            ||
-            stick_ang >= BACK_HIGH && stick_ang <= BACK_SUB_HIGH
-        {
-            if lr > 0.0 {
-                return InputDirection::BACK;
-            }
-            else {
-                return InputDirection::FORWARD;
-            }
-        }
-
-        else if stick_ang >= UP_BACK_LOW && stick_ang <= UP_BACK_HIGH {
-            if lr > 0.0 {
-                return InputDirection::UP_BACK;
-            }
-            else {
-                return InputDirection::UP_FORWARD;
-            }
-        }
-
-        else if stick_ang >= UP_LOW && stick_ang <= UP_HIGH {
-
-                return InputDirection::UP;
-
-        }
-
-        else if stick_ang >= UP_FORWARD_LOW && stick_ang <= UP_FORWARD_HIGH {
-            if lr > 0.0 {
-                return InputDirection::UP_FORWARD;
-            }
-            else {
-                return InputDirection::UP_BACK;
-            }        }
-
-        else {
-            return InputDirection::ERROR;
-        }
-
-        
+    if stick_x == 0.0 && stick_y == 0.0 {
+        return InputDirection::NEUTRAL;
     }
-    /// returns the general direction of where the control stick was LAST FRAME with fighting game style inputs
-    pub unsafe fn get_prev_stick_dir(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirection {
-        
-        let stick_x = ControlModule::get_stick_prev_x(module_accessor);
-        let stick_y = ControlModule::get_stick_prev_y(module_accessor);
-        let lr = PostureModule::lr(module_accessor);
 
-        let rad_ang = stick_y.atan2(stick_x);
-
-        let stick_ang = rad_ang.to_degrees();
-        
-        if stick_x == 0.0 && stick_y == 0.0 {
-            return InputDirection::NEUTRAL;
+    else if stick_ang > FORWARD_LOW && stick_ang < FORWARD_HIGH {
+        if lr > 0.0 {
+            return InputDirection::FORWARD;
         }
-
-        else if stick_ang > FORWARD_LOW && stick_ang < FORWARD_HIGH {
-            if lr > 0.0 {
-                return InputDirection::FORWARD;
-            }
-            else {
-                return InputDirection::BACK;
-            }
+        else {
+            return InputDirection::BACK;
         }
+    }
 
-        else if stick_ang > DOWN_FORWARD_LOW && stick_ang <= DOWN_FORWARD_HIGH {
-            if lr > 0.0 {
-                return InputDirection::DOWN_FORWARD;
-            }
-            else {
-                return InputDirection::DOWN_BACK;
-            }
+    else if stick_ang > DOWN_FORWARD_LOW && stick_ang <= DOWN_FORWARD_HIGH {
+        if lr > 0.0 {
+            return InputDirection::DOWN_FORWARD;
         }
-
-        else if stick_ang > DOWN_LOW && stick_ang <= DOWN_HIGH {
-            return InputDirection::DOWN
+        else {
+            return InputDirection::DOWN_BACK;
         }
+    }
+    else if stick_ang > DOWN_LOW && stick_ang <= DOWN_HIGH {
 
-        else if stick_ang > DOWN_BACK_LOW && stick_ang <= DOWN_BACK_HIGH {
-            if lr > 0.0 {
-                return InputDirection::DOWN_BACK;
-            }
-            else {
-                return InputDirection::DOWN_FORWARD;
-            }
+            return InputDirection::DOWN;
+
+    }
+    else if stick_ang > DOWN_BACK_LOW && stick_ang <= DOWN_BACK_HIGH {
+        if lr > 0.0 {
+            return InputDirection::DOWN_BACK;
         }
-
-        else if 
-            stick_ang >= BACK_SUB_LOW && stick_ang <= BACK_LOW
-            ||
-            stick_ang >= BACK_HIGH && stick_ang <= BACK_SUB_HIGH
-        {
-            if lr > 0.0 {
-                return InputDirection::BACK;
-            }
-            else {
-                return InputDirection::FORWARD;
-            }
+        else {
+            return InputDirection::DOWN_FORWARD;
         }
-
-        else if stick_ang >= UP_BACK_LOW && stick_ang <= UP_BACK_HIGH {
-            if lr > 0.0 {
-                return InputDirection::UP_BACK;
-            }
-            else {
-                return InputDirection::UP_FORWARD;
-            }
+    }
+    else if 
+        stick_ang >= BACK_SUB_LOW && stick_ang <= BACK_LOW
+        ||
+        stick_ang >= BACK_HIGH && stick_ang <= BACK_SUB_HIGH
+    {
+        if lr > 0.0 {
+            return InputDirection::BACK;
         }
+        else {
+            return InputDirection::FORWARD;
+        }
+    }
 
-        else if stick_ang >= UP_LOW && stick_ang <= UP_HIGH {
+    else if stick_ang >= UP_BACK_LOW && stick_ang <= UP_BACK_HIGH {
+        if lr > 0.0 {
+            return InputDirection::UP_BACK;
+        }
+        else {
+            return InputDirection::UP_FORWARD;
+        }
+    }
+
+    else if stick_ang >= UP_LOW && stick_ang <= UP_HIGH {
+
             return InputDirection::UP;
-        }
-
-        else if stick_ang >= UP_FORWARD_LOW && stick_ang <= UP_FORWARD_HIGH {
-            if lr > 0.0 {
-                return InputDirection::UP_FORWARD;
-            }
-            else {
-                return InputDirection::UP_BACK;
-            }        }
-
-        else {
-            return InputDirection::ERROR;
-        }
 
     }
-    /// returns the general direction of where the control stick is in with general controller inputs
-    pub unsafe fn get_stick_dir_raw(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirectionRaw {
-        let stick_ang = ControlModule::get_stick_angle(module_accessor).to_degrees();
-        let stick_x = ControlModule::get_stick_x(module_accessor);
-        let stick_y = ControlModule::get_stick_y(module_accessor);
 
-        if stick_x == 0.0 && stick_y == 0.0 {
-            return InputDirectionRaw::NEUTRAL;
+    else if stick_ang >= UP_FORWARD_LOW && stick_ang <= UP_FORWARD_HIGH {
+        if lr > 0.0 {
+            return InputDirection::UP_FORWARD;
         }
-
-        else if stick_ang > FORWARD_LOW && stick_ang < FORWARD_HIGH {
-            return InputDirectionRaw::RIGHT;
-        }
-
-        else if stick_ang > DOWN_FORWARD_LOW && stick_ang <= DOWN_FORWARD_HIGH {
-            return InputDirectionRaw::DOWN_RIGHT;
-        }
-
-        else if stick_ang > DOWN_LOW && stick_ang <= DOWN_HIGH {
-            return InputDirectionRaw::DOWN
-        }
-
-        else if stick_ang > DOWN_BACK_LOW && stick_ang <= DOWN_BACK_HIGH {
-            return InputDirectionRaw::DOWN_LEFT;
-        }
-
-        else if 
-            stick_ang >= BACK_SUB_LOW && stick_ang <= BACK_LOW
-            ||
-            stick_ang >= BACK_HIGH && stick_ang <= BACK_SUB_HIGH
-        {
-            return InputDirectionRaw::LEFT;
-        }
-
-        else if stick_ang >= UP_BACK_LOW && stick_ang <= UP_BACK_HIGH {
-            return InputDirectionRaw::UP_LEFT
-        }
-
-        else if stick_ang >= UP_LOW && stick_ang <= UP_HIGH {
-            return InputDirectionRaw::UP;
-        }
-
-        else if stick_ang >= UP_FORWARD_LOW && stick_ang <= UP_FORWARD_HIGH {
-            return InputDirectionRaw::UP_RIGHT;
-        }
-
         else {
-            return InputDirectionRaw::ERROR;
-        }
+            return InputDirection::UP_BACK;
+        }        }
 
-        
+    else {
+        return InputDirection::ERROR;
     }
-    /// returns the general direction of where the control stick was LAST FRAME with general controller inputs
-    pub unsafe fn get_prev_stick_dir_raw(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirectionRaw {
-        
-        let stick_x = ControlModule::get_stick_prev_x(module_accessor);
-        let stick_y = ControlModule::get_stick_prev_y(module_accessor);
 
-        let rad_ang = stick_y.atan2(stick_x);
+    
+}
+/// returns the general direction of where the control stick was LAST FRAME with fighting game style inputs
+pub unsafe fn get_prev_stick_dir(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirection {
+    
+    let stick_x = ControlModule::get_stick_prev_x(module_accessor);
+    let stick_y = ControlModule::get_stick_prev_y(module_accessor);
+    let lr = PostureModule::lr(module_accessor);
 
-        let stick_ang = rad_ang.to_degrees();
-        
-        if stick_x == 0.0 && stick_y == 0.0 {
-            return InputDirectionRaw::NEUTRAL;
+    let rad_ang = stick_y.atan2(stick_x);
+
+    let stick_ang = rad_ang.to_degrees();
+    
+    if stick_x == 0.0 && stick_y == 0.0 {
+        return InputDirection::NEUTRAL;
+    }
+
+    else if stick_ang > FORWARD_LOW && stick_ang < FORWARD_HIGH {
+        if lr > 0.0 {
+            return InputDirection::FORWARD;
         }
-
-        else if stick_ang > FORWARD_LOW && stick_ang < FORWARD_HIGH {
-            return InputDirectionRaw::RIGHT;
-        }
-
-        else if stick_ang > DOWN_FORWARD_LOW && stick_ang <= DOWN_FORWARD_HIGH {
-            return InputDirectionRaw::DOWN_RIGHT;
-        }
-
-        else if stick_ang > DOWN_LOW && stick_ang <= DOWN_HIGH {
-            return InputDirectionRaw::DOWN
-        }
-
-        else if stick_ang > DOWN_BACK_LOW && stick_ang <= DOWN_BACK_HIGH {
-            return InputDirectionRaw::DOWN_LEFT;
-        }
-
-        else if 
-            stick_ang >= BACK_SUB_LOW && stick_ang <= BACK_LOW
-            ||
-            stick_ang >= BACK_HIGH && stick_ang <= BACK_SUB_HIGH
-        {
-            return InputDirectionRaw::LEFT;
-        }
-
-        else if stick_ang >= UP_BACK_LOW && stick_ang <= UP_BACK_HIGH {
-            return InputDirectionRaw::UP_LEFT
-        }
-
-        else if stick_ang >= UP_LOW && stick_ang <= UP_HIGH {
-            return InputDirectionRaw::UP;
-        }
-
-        else if stick_ang >= UP_FORWARD_LOW && stick_ang <= UP_FORWARD_HIGH {
-            return InputDirectionRaw::UP_RIGHT;
-        }
-
         else {
-            return InputDirectionRaw::ERROR;
+            return InputDirection::BACK;
+        }
+    }
+
+    else if stick_ang > DOWN_FORWARD_LOW && stick_ang <= DOWN_FORWARD_HIGH {
+        if lr > 0.0 {
+            return InputDirection::DOWN_FORWARD;
+        }
+        else {
+            return InputDirection::DOWN_BACK;
+        }
+    }
+
+    else if stick_ang > DOWN_LOW && stick_ang <= DOWN_HIGH {
+        return InputDirection::DOWN
+    }
+
+    else if stick_ang > DOWN_BACK_LOW && stick_ang <= DOWN_BACK_HIGH {
+        if lr > 0.0 {
+            return InputDirection::DOWN_BACK;
+        }
+        else {
+            return InputDirection::DOWN_FORWARD;
+        }
+    }
+
+    else if 
+        stick_ang >= BACK_SUB_LOW && stick_ang <= BACK_LOW
+        ||
+        stick_ang >= BACK_HIGH && stick_ang <= BACK_SUB_HIGH
+    {
+        if lr > 0.0 {
+            return InputDirection::BACK;
+        }
+        else {
+            return InputDirection::FORWARD;
+        }
+    }
+
+    else if stick_ang >= UP_BACK_LOW && stick_ang <= UP_BACK_HIGH {
+        if lr > 0.0 {
+            return InputDirection::UP_BACK;
+        }
+        else {
+            return InputDirection::UP_FORWARD;
+        }
+    }
+
+    else if stick_ang >= UP_LOW && stick_ang <= UP_HIGH {
+        return InputDirection::UP;
+    }
+
+    else if stick_ang >= UP_FORWARD_LOW && stick_ang <= UP_FORWARD_HIGH {
+        if lr > 0.0 {
+            return InputDirection::UP_FORWARD;
+        }
+        else {
+            return InputDirection::UP_BACK;
+        }        }
+
+    else {
+        return InputDirection::ERROR;
+    }
+
+}
+/// returns the general direction of where the control stick is in with general controller inputs
+pub unsafe fn get_stick_dir_raw(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirectionRaw {
+    let stick_ang = ControlModule::get_stick_angle(module_accessor).to_degrees();
+    let stick_x = ControlModule::get_stick_x(module_accessor);
+    let stick_y = ControlModule::get_stick_y(module_accessor);
+
+    if stick_x == 0.0 && stick_y == 0.0 {
+        return InputDirectionRaw::NEUTRAL;
+    }
+
+    else if stick_ang > FORWARD_LOW && stick_ang < FORWARD_HIGH {
+        return InputDirectionRaw::RIGHT;
+    }
+
+    else if stick_ang > DOWN_FORWARD_LOW && stick_ang <= DOWN_FORWARD_HIGH {
+        return InputDirectionRaw::DOWN_RIGHT;
+    }
+
+    else if stick_ang > DOWN_LOW && stick_ang <= DOWN_HIGH {
+        return InputDirectionRaw::DOWN
+    }
+
+    else if stick_ang > DOWN_BACK_LOW && stick_ang <= DOWN_BACK_HIGH {
+        return InputDirectionRaw::DOWN_LEFT;
+    }
+
+    else if 
+        stick_ang >= BACK_SUB_LOW && stick_ang <= BACK_LOW
+        ||
+        stick_ang >= BACK_HIGH && stick_ang <= BACK_SUB_HIGH
+    {
+        return InputDirectionRaw::LEFT;
+    }
+
+    else if stick_ang >= UP_BACK_LOW && stick_ang <= UP_BACK_HIGH {
+        return InputDirectionRaw::UP_LEFT
+    }
+
+    else if stick_ang >= UP_LOW && stick_ang <= UP_HIGH {
+        return InputDirectionRaw::UP;
+    }
+
+    else if stick_ang >= UP_FORWARD_LOW && stick_ang <= UP_FORWARD_HIGH {
+        return InputDirectionRaw::UP_RIGHT;
+    }
+
+    else {
+        return InputDirectionRaw::ERROR;
+    }
+
+    
+}
+/// returns the general direction of where the control stick was LAST FRAME with general controller inputs
+pub unsafe fn get_prev_stick_dir_raw(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirectionRaw {
+    
+    let stick_x = ControlModule::get_stick_prev_x(module_accessor);
+    let stick_y = ControlModule::get_stick_prev_y(module_accessor);
+
+    let rad_ang = stick_y.atan2(stick_x);
+
+    let stick_ang = rad_ang.to_degrees();
+    
+    if stick_x == 0.0 && stick_y == 0.0 {
+        return InputDirectionRaw::NEUTRAL;
+    }
+
+    else if stick_ang > FORWARD_LOW && stick_ang < FORWARD_HIGH {
+        return InputDirectionRaw::RIGHT;
+    }
+
+    else if stick_ang > DOWN_FORWARD_LOW && stick_ang <= DOWN_FORWARD_HIGH {
+        return InputDirectionRaw::DOWN_RIGHT;
+    }
+
+    else if stick_ang > DOWN_LOW && stick_ang <= DOWN_HIGH {
+        return InputDirectionRaw::DOWN
+    }
+
+    else if stick_ang > DOWN_BACK_LOW && stick_ang <= DOWN_BACK_HIGH {
+        return InputDirectionRaw::DOWN_LEFT;
+    }
+
+    else if 
+        stick_ang >= BACK_SUB_LOW && stick_ang <= BACK_LOW
+        ||
+        stick_ang >= BACK_HIGH && stick_ang <= BACK_SUB_HIGH
+    {
+        return InputDirectionRaw::LEFT;
+    }
+
+    else if stick_ang >= UP_BACK_LOW && stick_ang <= UP_BACK_HIGH {
+        return InputDirectionRaw::UP_LEFT
+    }
+
+    else if stick_ang >= UP_LOW && stick_ang <= UP_HIGH {
+        return InputDirectionRaw::UP;
+    }
+
+    else if stick_ang >= UP_FORWARD_LOW && stick_ang <= UP_FORWARD_HIGH {
+        return InputDirectionRaw::UP_RIGHT;
+    }
+
+    else {
+        return InputDirectionRaw::ERROR;
+    }
+
+}
+
+
+
+///returns weather or not a control_pad_button was hit on the same frame as a stick direction
+/// 
+/// # Arguments
+/// 
+/// *`module_accessor` a pointer to `BattleObjectModuleAccessor`
+/// 
+/// *`dir` the direction being checked `InputDirection`
+/// 
+/// *`use_easy_df` toggles if easy_df is used when checking for InputDirection::DOWN_FORWARD
+/// 
+/// *`button` the CONTROL_PAD_BUTTON being checked `i32`
+/// 
+/// *`allow_extra_frame` determines if the perfect input can be done 1 frame late simmaler to kazuya's ewgf `bool`
+/// 
+/// *`allow_negative_edge` determines if releaseing the input on a perfect frame counts as a perfect input `bool`
+/// 
+/// *`allow_cstick_perfect` determines if using the cstick can do perfect inputs `bool`
+/// 
+/// # Example
+///
+/// ``` what kazuyas ewgf check would look like 
+/// if ewgf_step == 2 && CommandInputModule::is_perfect_input(fighter.module_accessor, InputDirection::DOWN_FORWARD, true, *CONTROL_PAD_BUTTON_ATTACK, true, true, false) {
+///    FIGHTER_PAD_CMD_CAT4_FLAG_COMMAND_623STRICT = true;
+/// }
+/// ```
+pub unsafe fn is_perfect_input(module_accessor:*mut BattleObjectModuleAccessor, button: i32, dir: InputDirection, allow_extra_frame: bool, allow_negative_edge: bool, allow_cstick_perfect: bool) -> bool {
+    
+    let stick_dir = get_stick_dir(module_accessor);
+
+    if ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) && !allow_cstick_perfect {
+        
+        // println!("i see a cstick");
+        return false;
+
+    }
+
+    if dir == stick_dir && get_prev_stick_dir(module_accessor) != dir && ControlModule::check_button_on_trriger(module_accessor, button) {
+        // println!("perfect");
+        //println!("dir is a {}", type_of(&dir));
+        return true;
         }
 
+    if allow_extra_frame {
+        if dir == stick_dir && get_specific_charge_time(module_accessor, &dir) <= 2 && ControlModule::check_button_on_trriger(module_accessor, button) {
+            // println!("lenient frame");
+            return true;
+        }
+    }
+
+    if allow_negative_edge {
+        if dir == stick_dir && get_prev_stick_dir(module_accessor) != dir && ControlModule::check_button_on_release(module_accessor, button) {
+            // println!("negative edge perfect");
+            return true;
+        }
+    }
+
+    if allow_extra_frame && allow_negative_edge {
+        if dir == stick_dir && get_specific_charge_time(module_accessor, &dir) <= 2 && ControlModule::check_button_on_release(module_accessor, button) {
+            // println!("negative lenient frame");
+            return true;
+        }
     }
     
-
-
-    ///returns weather or not a control_pad_button was hit on the same frame as a stick direction
-    /// 
-    /// # Arguments
-    /// 
-    /// *`module_accessor` a pointer to `BattleObjectModuleAccessor`
-    /// 
-    /// *`dir` the direction being checked `InputDirection`
-    /// 
-    /// *`use_easy_df` toggles if easy_df is used when checking for InputDirection::DOWN_FORWARD
-    /// 
-    /// *`button` the CONTROL_PAD_BUTTON being checked `i32`
-    /// 
-    /// *`allow_extra_frame` determines if the perfect input can be done 1 frame late simmaler to kazuya's ewgf `bool`
-    /// 
-    /// *`allow_negative_edge` determines if releaseing the input on a perfect frame counts as a perfect input `bool`
-    /// 
-    /// *`allow_cstick_perfect` determines if using the cstick can do perfect inputs `bool`
-    /// 
-    /// # Example
-    ///
-    /// ``` what kazuyas ewgf check would look like 
-    /// if ewgf_step == 2 && CommandInputModule::is_perfect_input(fighter.module_accessor, InputDirection::DOWN_FORWARD, true, *CONTROL_PAD_BUTTON_ATTACK, true, true, false) {
-    ///    FIGHTER_PAD_CMD_CAT4_FLAG_COMMAND_623STRICT = true;
-    /// }
-    /// ```
-    pub unsafe fn is_perfect_input(module_accessor:*mut BattleObjectModuleAccessor, button: i32, dir: InputDirection, allow_extra_frame: bool, allow_negative_edge: bool, allow_cstick_perfect: bool) -> bool {
-        
-        let stick_dir = get_stick_dir(module_accessor);
-
-        if ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) && !allow_cstick_perfect {
-            
-            println!("i see a cstick");
-            return false;
-
-        }
-
-        if dir == stick_dir && get_prev_stick_dir(module_accessor) != dir && ControlModule::check_button_on_trriger(module_accessor, button) {
-            println!("perfect");
-            //println!("dir is a {}", type_of(&dir));
-            return true;
-            }
-
-        if allow_extra_frame {
-            if dir == stick_dir && get_specific_charge_time(module_accessor, &dir) <= 2 && ControlModule::check_button_on_trriger(module_accessor, button) {
-                println!("lienient frame");
-                return true;
-            }
-        }
-
-        if allow_negative_edge {
-            if dir == stick_dir && get_prev_stick_dir(module_accessor) != dir && ControlModule::check_button_on_release(module_accessor, button) {
-                println!("negative edge perfect");
-                return true;
-            }
-        }
-
-        if allow_extra_frame && allow_negative_edge {
-            if dir == stick_dir && get_specific_charge_time(module_accessor, &dir) <= 2 && ControlModule::check_button_on_release(module_accessor, button) {
-                println!("negative lienient frame");
-                return true;
-            }
-        }
-        
-        
-        return false;
-        
-    }
-
-pub unsafe fn update_is_perfect(fighter: &mut L2CFighterCommon) {
-
-    let entry_id = WorkModule::get_int(fighter.module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let dir = get_stick_dir(fighter.module_accessor);
-
-    if !StatusModule::is_changing(fighter.module_accessor) { 
-        if dir == InputDirection::DOWN || dir == InputDirection::DOWN_BACK || dir == InputDirection::DOWN_FORWARD {
-            
-            DOWN_CHARGE_TIME[entry_id] += 1;
-            DOWN_CHARGE_BUFFER_TIME[entry_id] = 9;
-
-        }
-        else {
-            if DOWN_CHARGE_BUFFER_TIME[entry_id] > 0 {
-                DOWN_CHARGE_BUFFER_TIME[entry_id] -= 1;
-            }
-            else if DOWN_CHARGE_TIME[entry_id] != 0 {
-                
-                DOWN_CHARGE_TIME[entry_id] = 0;
-
-            }
-        } 
-        if dir == InputDirection::BACK || dir == InputDirection::UP_BACK || dir == InputDirection::DOWN_BACK {
-            BACK_CHARGE_TIME[entry_id] += 1;
-            BACK_CHARGE_BUFFER_TIME[entry_id] = 9;
-        }
-        else {
-            if BACK_CHARGE_BUFFER_TIME[entry_id] > 0 {
-                BACK_CHARGE_BUFFER_TIME[entry_id] -= 1;
-            }
-            else if BACK_CHARGE_TIME[entry_id] != 0 {
-                BACK_CHARGE_TIME[entry_id] = 0;
-            }
-        }
-
-        if dir == InputDirection::UP || dir == InputDirection::UP_BACK || dir == InputDirection::UP_FORWARD {
-            UP_CHARGE_TIME[entry_id] += 1;
-            UP_CHARGE_BUFFER_TIME[entry_id] = 9;
-
-        }
-        else {
-            if UP_CHARGE_BUFFER_TIME[entry_id] > 0 {
-                UP_CHARGE_BUFFER_TIME[entry_id] -= 1;
-            }
-            else if UP_CHARGE_TIME[entry_id] != 0 {
-        
-                UP_CHARGE_TIME[entry_id] = 0;
-        
-            }
-        }
-
-        if dir == InputDirection::FORWARD || dir == InputDirection::UP_FORWARD || dir == InputDirection::DOWN_FORWARD {
-            FORWARD_CHARGE_TIME[entry_id] += 1;
-            FORWARD_CHARGE_BUFFER_TIME[entry_id] = 9;
-        }
-        else {
-            if FORWARD_CHARGE_BUFFER_TIME[entry_id] > 0 {
-            FORWARD_CHARGE_BUFFER_TIME[entry_id] -= 1;
-            }
-            else if FORWARD_CHARGE_TIME[entry_id] != 0 {
-                FORWARD_CHARGE_TIME[entry_id] = 0;
-            }
-        }
-
-        inc_specific_charge_time(fighter.module_accessor, dir);
-        
-    }
+    
+    return false;
+    
 }
 
 //todo add a perfect input varient for when the button is released

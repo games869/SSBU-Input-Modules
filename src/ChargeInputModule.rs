@@ -2,6 +2,7 @@ use {
 
     super::{ CommandInputModule::{ InputDirection::*, *  }, InputType, StickType, *}, 
     std::usize,
+    smash::lua2cpp::L2CFighterCommon
 }; 
 
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -1099,7 +1100,7 @@ pub unsafe fn is_charged(module_accessor:*mut BattleObjectModuleAccessor, dir: I
 
 }
 
-pub unsafe fn inc_specific_charge_time(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection) {
+unsafe fn inc_specific_charge_time(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection) {
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
 
     if dir == InputDirection::NEUTRAL || dir == InputDirection::ERROR {
@@ -1255,4 +1256,74 @@ pub unsafe fn get_specific_charge_time(module_accessor:*mut BattleObjectModuleAc
 
     return i32::MAX;
 
+}
+
+
+pub unsafe fn update_is_perfect(fighter: &mut L2CFighterCommon) {
+
+    let entry_id = WorkModule::get_int(fighter.module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+    let dir = get_stick_dir(fighter.module_accessor);
+
+    if !StatusModule::is_changing(fighter.module_accessor) { 
+        if dir == InputDirection::DOWN || dir == InputDirection::DOWN_BACK || dir == InputDirection::DOWN_FORWARD {
+            
+            DOWN_CHARGE_TIME[entry_id] += 1;
+            DOWN_CHARGE_BUFFER_TIME[entry_id] = 9;
+
+        }
+        else {
+            if DOWN_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                DOWN_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if DOWN_CHARGE_TIME[entry_id] != 0 {
+                
+                DOWN_CHARGE_TIME[entry_id] = 0;
+
+            }
+        } 
+        if dir == InputDirection::BACK || dir == InputDirection::UP_BACK || dir == InputDirection::DOWN_BACK {
+            BACK_CHARGE_TIME[entry_id] += 1;
+            BACK_CHARGE_BUFFER_TIME[entry_id] = 9;
+        }
+        else {
+            if BACK_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                BACK_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if BACK_CHARGE_TIME[entry_id] != 0 {
+                BACK_CHARGE_TIME[entry_id] = 0;
+            }
+        }
+
+        if dir == InputDirection::UP || dir == InputDirection::UP_BACK || dir == InputDirection::UP_FORWARD {
+            UP_CHARGE_TIME[entry_id] += 1;
+            UP_CHARGE_BUFFER_TIME[entry_id] = 9;
+
+        }
+        else {
+            if UP_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                UP_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if UP_CHARGE_TIME[entry_id] != 0 {
+        
+                UP_CHARGE_TIME[entry_id] = 0;
+        
+            }
+        }
+
+        if dir == InputDirection::FORWARD || dir == InputDirection::UP_FORWARD || dir == InputDirection::DOWN_FORWARD {
+            FORWARD_CHARGE_TIME[entry_id] += 1;
+            FORWARD_CHARGE_BUFFER_TIME[entry_id] = 9;
+        }
+        else {
+            if FORWARD_CHARGE_BUFFER_TIME[entry_id] > 0 {
+            FORWARD_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if FORWARD_CHARGE_TIME[entry_id] != 0 {
+                FORWARD_CHARGE_TIME[entry_id] = 0;
+            }
+        }
+
+        inc_specific_charge_time(fighter.module_accessor, dir);
+        
+    }
 }
