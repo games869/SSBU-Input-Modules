@@ -456,21 +456,23 @@ pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
     let stick_dir = CommandInputModule::get_stick_dir(module_accessor);
 
+
     for input in 0 .. per_input.len() {
 
         let step = per_input[input].step as usize;
 
-        if per_input[input].life > 0 && !((per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input)) {
-
+        if per_input[input].life > 0 && !((per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input)) || per_dir[input][step].required_charge_time == 0{
+            
             per_input[input].life -= 1;
 
         }
         else if (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input) {
+            if per_dir[input][step].required_charge_time != 0 || per_input[input].regress_with_failed_input {
+                
+                per_input[input].life = per_dir[input][step].default_life;
 
-            per_input[input].life = per_dir[input][step].default_life;
-
+            }
         }
-        
     }
 }
 
@@ -514,17 +516,19 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
         if input_stick_type == StickType::Both || is_cstick && is_main_stick {
             for _ in 0 .. max_shortcuts {
-                if life == 0 && !per_input[input].require_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) && !per_input[input].regress_with_failed_input {
+                if life == 0 && !per_input[input].require_manual_input_kill && !per_input[input].regress_with_failed_input {
 
                     per_input[input].step = 0;
                     per_input[input].charge_time = 0;
 
                 }
 
-                if update_charge_time && ((per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input) && step != max_step) {
+                if update_charge_time && step != max_step && ( ( per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) ) && check_buttons(module_accessor, input) ) {
+
+                    println!("charge_time: {}, req: {}", per_input[input].charge_time, per_dir[input][step].required_charge_time + regress_mod);
 
                     if per_input[input].charge_time < ( per_dir[input][step].required_charge_time + regress_mod ) {
-            
+
                         per_input[input].charge_time += 1;
 
                     }
