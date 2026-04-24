@@ -14,7 +14,7 @@ struct PerInput {
 
     step: u8,
     life: u8,
-    defualt_life: u8,
+    default_life: u8,
     max_shortcuts: u8,
     stick_type: StickType
 
@@ -38,7 +38,7 @@ struct PerDir {
 }
 
 
-const DEFUALT_LIFE: u8 = 9;
+const DEFAULT_LIFE: u8 = 9;
 
 static mut MOTION_INPUT_STORAGE: [(Vec<PerInput>, Vec<Vec<PerDir>>, f32); 8] = [
     (Vec::new(), Vec::new(), 0.0), 
@@ -146,7 +146,7 @@ pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
     }
 
     let blank_input = PerInput {
-        defualt_life: DEFUALT_LIFE,
+        default_life: DEFAULT_LIFE,
         life: 0,
         step: 0,
         max_shortcuts: 1,
@@ -208,8 +208,8 @@ pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw
     }
 
     let blank_input = PerInput {
-        defualt_life: DEFUALT_LIFE,
-        life: DEFUALT_LIFE,
+        default_life: DEFAULT_LIFE,
+        life: DEFAULT_LIFE,
         step: 0,
         max_shortcuts: 1,
         stick_type: StickType::Control_Stick_Only
@@ -246,7 +246,7 @@ pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
         
 }
 
-/// Changes how long the input can go without a new step before its reset defualt is 9
+/// Changes how long the input can go without a new step before its reset default is 9
 /// 
 /// for raging demon style inputs its best to change this to 20 
 pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
@@ -255,7 +255,7 @@ pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
 
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
-    per_input_vec[input].defualt_life = new_life;
+    per_input_vec[input].default_life = new_life;
 
 }
 
@@ -333,7 +333,7 @@ pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
 
 /// Sets the total amount of inputs that can be done in 1 frame
 /// 
-/// Defualts to 1 and wont allow any shortcutting
+/// Defaults to 1 and wont allow any shortcutting
 pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
 
     if !is_input_index_safe(entry_id, input, true, "set_max_shortcuts") { return; }
@@ -488,7 +488,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                 }
                 else if is_motion_correct(module_accessor, dirs, raw_dirs.clone(), is_raw_input, inputs) && is_buttons_correct(module_accessor, inputs) && step as usize != max_step {
 
-                    let new_life = per_input_vec[inputs].defualt_life;
+                    let new_life = per_input_vec[inputs].default_life;
 
                     per_input_vec[inputs].step += 1;
                     per_input_vec[inputs].life = new_life;

@@ -2,6 +2,7 @@ use {
 
     super::{ CommandInputModule::{ InputDirection::*, *  }, InputType, StickType, *}, 
     std::usize,
+    smash::lua2cpp::L2CFighterCommon
 }; 
 
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -12,7 +13,7 @@ struct PerInput {
     life: u8,
     charge_time: u8,
     max_shortcuts: u8,
-    requier_manual_input_kill: bool,
+    require_manual_input_kill: bool,
     regress_with_failed_input: bool,
     stick_type: StickType
 
@@ -29,14 +30,14 @@ struct PerDir {
     allow_c_stick_input: Option<bool>,
     require_multiple_pressed_inputs: bool,
     strict: bool,
-    defualt_life: u8,
+    default_life: u8,
     required_charge_time: u8,
     can_shortcut: bool
 
 }
 
-const DEFUALT_LIFE: u8 = 9;
-const DEFUALT_CHARGE_TIME: u8 = 24;
+const DEFAULT_LIFE: u8 = 9;
+const DEFAULT_CHARGE_TIME: u8 = 24;
 
 static mut CHARGE_INPUT_STORAGE: [(Vec<PerInput>, Vec<Vec<PerDir>>, f32); 8] = [
     (Vec::new(), Vec::new(), 0.0), 
@@ -156,8 +157,8 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
             allow_c_stick_input: None, 
             require_multiple_pressed_inputs: false, 
             strict: false, 
-            defualt_life: DEFUALT_LIFE, 
-            required_charge_time: DEFUALT_CHARGE_TIME,
+            default_life: DEFAULT_LIFE, 
+            required_charge_time: DEFAULT_CHARGE_TIME,
             can_shortcut: false
         };
 
@@ -170,7 +171,7 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
         step: 0, 
         life: 0, 
         charge_time: 0,
-        requier_manual_input_kill: false,
+        require_manual_input_kill: false,
         regress_with_failed_input: false,
         stick_type: StickType::Control_Stick_Only,
         max_shortcuts: 1
@@ -215,7 +216,7 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 ///  ChargeInputModule::set_charge_time(fighter.entry_id, 0, 1, 40);
 ///  ChargeInputModule::add_button(fighter.entry_id, 0, 2, [*CONTROL_PAD_BUTTON_ATTACK, *CONTROL_PAD_BUTTON_SPECIAL], on, None, None, None);
 ///  ChargeInputModule::set_charge_time(fighter.entry_id, 0, 2, 55);
-///  ChargeInputModule::requier_manual_input_kill(fighter.entry_id, 0);
+///  ChargeInputModule::require_manual_input_kill(fighter.entry_id, 0);
 ///  ChargeInputModule::regress_with_failed_input(fighter.entry_id, 0);
 ///  
 /// ```
@@ -256,7 +257,7 @@ pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step
 
 /// Sets the total amount of inputs that can be done in 1 frame
 /// 
-/// Defualts to 1 and wont allow any shortcutting
+/// Defaults to 1 and wont allow any shortcutting
 pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
 
     if !is_input_index_safe(entry_id, input, true, "set_max_shortcuts") { return; }
@@ -347,7 +348,7 @@ pub unsafe fn set_life(entry_id: usize, input: usize, new_life: u8) {
 
     for i in 0..per_dir[input].len() {
 
-        per_dir[input][i].defualt_life = new_life;
+        per_dir[input][i].default_life = new_life;
 
     }
 }
@@ -359,7 +360,7 @@ pub unsafe fn set_specific_life(entry_id: usize, input: usize, step: usize, new_
 
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
-    per_dir[input][step].defualt_life = new_life;
+    per_dir[input][step].default_life = new_life;
 
 }
 
@@ -398,13 +399,13 @@ pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, 
 }
 
 /// Makes it so the only way an input can be reset is with ChargeInputModule::reset_input_step
-pub unsafe fn requier_manual_input_kill(entry_id: usize, input: usize) {
+pub unsafe fn require_manual_input_kill(entry_id: usize, input: usize) {
 
-    if !is_input_index_safe(entry_id, input, true, "requier_manual_input_kill") { return; }
+    if !is_input_index_safe(entry_id, input, true, "require_manual_input_kill") { return; }
 
     let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
-    per_input[input].requier_manual_input_kill = true;
+    per_input[input].require_manual_input_kill = true;
 
 }
 
@@ -466,7 +467,7 @@ pub unsafe fn update_timers(module_accessor:*mut BattleObjectModuleAccessor) {
         }
         else if (per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL)) && check_buttons(module_accessor, input) {
 
-            per_input[input].life = per_dir[input][step].defualt_life;
+            per_input[input].life = per_dir[input][step].default_life;
 
         }
         
@@ -507,13 +508,13 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
         let is_main_stick = (input_stick_type == StickType::Control_Stick_Only && !ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON)) || input_stick_type != StickType::Control_Stick_Only;
         let max_shortcuts = per_input[input].max_shortcuts;
         let regress_mod: u8 = 
-            if per_input[input].regress_with_failed_input { per_dir[input][step].defualt_life }
+            if per_input[input].regress_with_failed_input { per_dir[input][step].default_life }
             else { 0 }
         ;
 
         if input_stick_type == StickType::Both || is_cstick && is_main_stick {
             for _ in 0 .. max_shortcuts {
-                if life == 0 && !per_input[input].requier_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) && !per_input[input].regress_with_failed_input {
+                if life == 0 && !per_input[input].require_manual_input_kill && ( !is_complete(entry_id, input) || is_complete(entry_id, input) && CancelModule::is_enable_cancel(module_accessor) ) && !per_input[input].regress_with_failed_input {
 
                     per_input[input].step = 0;
                     per_input[input].charge_time = 0;
@@ -537,11 +538,11 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                         }
                         else if per_input[input].step > 0 && per_input[input].charge_time == 0 {
 
-                            let new_life = per_dir[input][step - 1].defualt_life;
+                            let new_life = per_dir[input][step - 1].default_life;
                         
                             per_input[input].step -= 1;
                             per_input[input].life = new_life;
-                            per_input[input].charge_time = DEFUALT_CHARGE_TIME + regress_mod;
+                            per_input[input].charge_time = DEFAULT_CHARGE_TIME + regress_mod;
 
 
                         }
@@ -559,7 +560,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                 else if (!per_input[input].regress_with_failed_input && check_charge(module_accessor, input) && check_buttons(module_accessor, input) || per_input[input].regress_with_failed_input && check_next_charge(module_accessor, input) && check_next_buttons(module_accessor, input)) && step != max_step {
                     if should_progress(module_accessor, input) {
 
-                        let new_life = per_dir[input][step + 1].defualt_life;
+                        let new_life = per_dir[input][step + 1].default_life;
                         
                         step += 1;
                         per_input[input].step = step as u8;
@@ -1037,4 +1038,292 @@ unsafe fn should_progress(module_accessor:*mut BattleObjectModuleAccessor, input
 
     }
 
+}
+
+/// Returns whether or not module_accessor has held a stick direction for 2 consecutive frames
+/// 
+/// # Arguments
+/// 
+/// * `module_accessor` - a pointer to BattleObjectModuleAccessor
+/// 
+/// * `dir` - the direction that is being checked InputDirection
+/// 
+pub unsafe fn is_charging(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection) -> bool {
+    if get_stick_dir(module_accessor) == get_prev_stick_dir(module_accessor) && get_stick_dir(module_accessor) == dir {
+        return true;
+    }
+    else {
+        return false;
+    }
+    
+}
+
+//buffer between motion inputs is 9 frames
+//charge time for hold inputs is 24 frames
+
+/// Returns whether or not module_accessor has held a cardinal InputDirection for a desired number of frames
+/// 
+/// terrys rising tackle needs 24 frames for the charge input
+///
+/// # Arguments
+///
+/// * `module_accessor` - a pointer to BattleObjectModuleAccessor
+/// 
+/// * `dir` - the direction that needs to be charged InputDirection
+///
+/// * `length` - the number of frames the input must be held for i32 
+///
+/// # Example
+///
+/// ``` if the player has charged down on the control stick for 24 frames multiply the attack power by 1.5
+/// if CommandInputModule::is_charged(agent.module_accessor, InputDirection::DOWN, 24) {
+///    AttackModule::set_power_up(agent.module_accessor, 1.5);    
+/// }
+/// ```
+pub unsafe fn is_charged(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection, length: i32) -> bool {
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+    if dir == InputDirection::DOWN && DOWN_CHARGE_TIME[entry_id] >= length {
+        return true;
+    }
+    else if dir == InputDirection::BACK && BACK_CHARGE_TIME[entry_id] >= length {
+        return true;
+    }
+    else if dir == InputDirection::UP && UP_CHARGE_TIME[entry_id] >= length {
+        return true;
+    }
+    else if dir == InputDirection::FORWARD && FORWARD_CHARGE_TIME[entry_id] >= length {
+        return true;
+    }
+    else {
+        return false;
+    }
+
+}
+
+unsafe fn inc_specific_charge_time(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection) {
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+
+    if dir == InputDirection::NEUTRAL || dir == InputDirection::ERROR {
+        
+        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        DOWN_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+        BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        UP_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+            
+        return;        
+
+    }
+        
+    if dir != InputDirection::DOWN_BACK && DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::DOWN_BACK {
+
+        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+
+    }
+
+    if dir != InputDirection::DOWN && DOWN_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        DOWN_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::DOWN {
+
+        DOWN_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::DOWN_FORWARD && DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::DOWN_FORWARD {
+
+        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::BACK && BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::BACK {
+
+        BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::FORWARD && FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::FORWARD {
+
+        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::UP_BACK && UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::UP_BACK {
+
+        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::UP && UP_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        UP_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::UP {
+
+        UP_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::UP_FORWARD && UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::UP_FORWARD {
+
+        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+}
+///helper fn for is_perfect_input
+pub unsafe fn get_specific_charge_time(module_accessor:*mut BattleObjectModuleAccessor, dir: &InputDirection) -> i32{
+        
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+
+    if *dir == InputDirection::DOWN_BACK {
+
+        return DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::DOWN {
+
+        return DOWN_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::DOWN_FORWARD {
+
+        return DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::BACK {
+
+        return BACK_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::FORWARD {
+
+        return FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::UP_BACK {
+
+        return UP_BACK_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::UP {
+
+        return UP_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::UP_FORWARD {
+
+        return UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+
+    return i32::MAX;
+
+}
+
+
+pub unsafe fn update_is_perfect(fighter: &mut L2CFighterCommon) {
+
+    let entry_id = WorkModule::get_int(fighter.module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+    let dir = get_stick_dir(fighter.module_accessor);
+
+    if !StatusModule::is_changing(fighter.module_accessor) { 
+        if dir == InputDirection::DOWN || dir == InputDirection::DOWN_BACK || dir == InputDirection::DOWN_FORWARD {
+            
+            DOWN_CHARGE_TIME[entry_id] += 1;
+            DOWN_CHARGE_BUFFER_TIME[entry_id] = 9;
+
+        }
+        else {
+            if DOWN_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                DOWN_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if DOWN_CHARGE_TIME[entry_id] != 0 {
+                
+                DOWN_CHARGE_TIME[entry_id] = 0;
+
+            }
+        } 
+        if dir == InputDirection::BACK || dir == InputDirection::UP_BACK || dir == InputDirection::DOWN_BACK {
+            BACK_CHARGE_TIME[entry_id] += 1;
+            BACK_CHARGE_BUFFER_TIME[entry_id] = 9;
+        }
+        else {
+            if BACK_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                BACK_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if BACK_CHARGE_TIME[entry_id] != 0 {
+                BACK_CHARGE_TIME[entry_id] = 0;
+            }
+        }
+
+        if dir == InputDirection::UP || dir == InputDirection::UP_BACK || dir == InputDirection::UP_FORWARD {
+            UP_CHARGE_TIME[entry_id] += 1;
+            UP_CHARGE_BUFFER_TIME[entry_id] = 9;
+
+        }
+        else {
+            if UP_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                UP_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if UP_CHARGE_TIME[entry_id] != 0 {
+        
+                UP_CHARGE_TIME[entry_id] = 0;
+        
+            }
+        }
+
+        if dir == InputDirection::FORWARD || dir == InputDirection::UP_FORWARD || dir == InputDirection::DOWN_FORWARD {
+            FORWARD_CHARGE_TIME[entry_id] += 1;
+            FORWARD_CHARGE_BUFFER_TIME[entry_id] = 9;
+        }
+        else {
+            if FORWARD_CHARGE_BUFFER_TIME[entry_id] > 0 {
+            FORWARD_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if FORWARD_CHARGE_TIME[entry_id] != 0 {
+                FORWARD_CHARGE_TIME[entry_id] = 0;
+            }
+        }
+
+        inc_specific_charge_time(fighter.module_accessor, dir);
+        
+    }
 }
