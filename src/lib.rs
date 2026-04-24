@@ -54,10 +54,10 @@ impl fmt::Display for InputType {
 
 /// A custom module made to make checking the current input a little bit easier
 pub mod CommandInputModule;
-/// A custom module made to make the creation of custom motion intputs easy and simple
+/// A custom module made to make the creation of custom motion inputs easy and simple
 pub mod MotionInputModule;
 
-/// A custom module made to make the creation of custom charge intputs easy and simple
+/// A custom module made to make the creation of custom charge inputs easy and simple
 pub mod ChargeInputModule;
 
 /*

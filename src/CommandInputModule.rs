@@ -5,43 +5,44 @@ use {
         lib::lua_const::*
     }, 
     std::usize,
-    core::fmt
+    core::fmt,
+    super::ChargeInputModule::*
 }; 
 
-//a shit tone of stick angles for use in the CommandInputModule
-const FORWARD_HIGH:f32 = 15.0;
-const FORWARD_LOW:f32 = -15.0;
+//a shit ton of stick angles for use in the CommandInputModule
+const FORWARD_HIGH: f32 = 15.0;
+const FORWARD_LOW: f32 = -15.0;
 
-const DOWN_FORWARD_HIGH:f32 = -15.0;
-// const DOWN_FORWARD_SUB_LOW:f32 = -37.9;
-// const DOWN_FORWARD_SUB_HIGH:f32 = -38.0;
-const DOWN_FORWARD_LOW:f32 = -80.0;
+const DOWN_FORWARD_HIGH: f32 = -15.0;
+// const DOWN_FORWARD_SUB_LOW: f32 = -37.9;
+// const DOWN_FORWARD_SUB_HIGH: f32 = -38.0;
+const DOWN_FORWARD_LOW: f32 = -80.0;
 
-const DOWN_HIGH:f32 = -80.0;
-const DOWN_LOW:f32 = -100.0;
+const DOWN_HIGH: f32 = -80.0;
+const DOWN_LOW: f32 = -100.0;
 
-const DOWN_BACK_HIGH:f32 = -100.0;
-// const DOWN_BACK_SUB_LOW:f32 = -141.9;
-// const DOWN_BACK_SUB_HIGH:f32 = -142.0;
-const DOWN_BACK_LOW:f32 = -165.9;
+const DOWN_BACK_HIGH: f32 = -100.0;
+// const DOWN_BACK_SUB_LOW: f32 = -141.9;
+// const DOWN_BACK_SUB_HIGH: f32 = -142.0;
+const DOWN_BACK_LOW: f32 = -165.9;
 
-const BACK_HIGH:f32 = 165.0;
-const BACK_SUB_HIGH:f32 = 180.0;
-const BACK_SUB_LOW:f32 = -180.0;
-const BACK_LOW:f32 = -165.9;
+const BACK_HIGH: f32 = 165.0;
+const BACK_SUB_HIGH: f32 = 180.0;
+const BACK_SUB_LOW: f32 = -180.0;
+const BACK_LOW: f32 = -165.9;
 
-const UP_BACK_HIGH:f32 = 165.0;
-// const UP_BACK_SUB_LOW:f32 = 120.9;
-// const UP_BACK_SUB_HIGH:f32 = 119.0;
-const UP_BACK_LOW:f32 = 102.0;
+const UP_BACK_HIGH: f32 = 165.0;
+// const UP_BACK_SUB_LOW: f32 = 120.9;
+// const UP_BACK_SUB_HIGH: f32 = 119.0;
+const UP_BACK_LOW: f32 = 102.0;
 
-const UP_HIGH:f32 = 102.0;
-const UP_LOW:f32 = 79.0;
+const UP_HIGH: f32 = 102.0;
+const UP_LOW: f32 = 79.0;
 
-const UP_FORWARD_HIGH:f32 = 79.0;
-// const UP_FORWARD_SUB_LOW:f32 = 60.0;
-// const UP_FORWARD_SUB_HIGH:f32 = 59.9;
-const UP_FORWARD_LOW:f32 = 15.0;
+const UP_FORWARD_HIGH: f32 = 79.0;
+// const UP_FORWARD_SUB_LOW: f32 = 60.0;
+// const UP_FORWARD_SUB_HIGH: f32 = 59.9;
+const UP_FORWARD_LOW: f32 = 15.0;
 
 
 //every global input releated to ChargeInputModule
@@ -97,24 +98,24 @@ pub enum InputDirectionRaw {
 }
 
 
-static mut DOWN_CHARGE_TIME:[i32; 8] = [0; 8];
-static mut BACK_CHARGE_TIME:[i32; 8] = [0; 8];
-static mut UP_CHARGE_TIME:[i32; 8] = [0; 8];
-static mut FORWARD_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut DOWN_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut BACK_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut UP_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut FORWARD_CHARGE_TIME:[i32; 8] = [0; 8];
 
 static mut DOWN_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
 static mut BACK_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
 static mut UP_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
 static mut FORWARD_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
 
-static mut DOWN_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-static mut DOWN_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-static mut DOWN_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-static mut BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-static mut FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-static mut UP_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-static mut UP_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-static mut UP_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut DOWN_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut DOWN_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut DOWN_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut UP_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut UP_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+pub static mut UP_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
 
 
 impl fmt::Display for InputDirection {
@@ -434,65 +435,8 @@ impl fmt::Display for InputDirectionRaw {
         }
 
     }
-    /// Returns whether or not module_accessor has held a stick direction for 2 consecutive frames
-    /// 
-    /// # Arguments
-    /// 
-    /// * `module_accessor` - a pointer to BattleObjectModuleAccessor
-    /// 
-    /// * `dir` - the direction that is being checked InputDirection
-    /// 
-    pub unsafe fn is_charging(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection) -> bool {
-        if get_stick_dir(module_accessor) == get_prev_stick_dir(module_accessor) && get_stick_dir(module_accessor) == dir {
-            return true;
-        }
-        else {
-            return false;
-        }
-        
-    }
-
-    //buffer betwean motion inputs is 9 frames
-    //charge time for hold inputs is 24 frames
-
-    /// Returns whether or not module_accessor has held a cardinal InputDirection for a desired number of frames
-    /// 
-    /// terrys rising tackle needs 24 frames for the charge input
-    ///
-    /// # Arguments
-    ///
-    /// * `moudule_accessor` - a pointer to BattleObjectModuleAccessor
-    /// 
-    /// * `dir` - the direction that needs to be charged InputDirection
-    ///
-    /// * `length` - the number of frames the input must be held for i32 
-    ///
-    /// # Example
-    ///
-    /// ``` if the player has charged down on the control stick for 24 frames multiply the attack power by 1.5
-    /// if CommandInputModule::is_charged(agent.module_accessor, InputDirection::DOWN, 24) {
-    ///    AttackModule::set_power_up(agent.module_accessor, 1.5);    
-    /// }
-    /// ```
-    pub unsafe fn is_charged(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection, length: i32) -> bool {
-        let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-        if dir == InputDirection::DOWN && DOWN_CHARGE_TIME[entry_id] >= length {
-            return true;
-        }
-        else if dir == InputDirection::BACK && BACK_CHARGE_TIME[entry_id] >= length {
-            return true;
-        }
-        else if dir == InputDirection::UP && UP_CHARGE_TIME[entry_id] >= length {
-            return true;
-        }
-        else if dir == InputDirection::FORWARD && FORWARD_CHARGE_TIME[entry_id] >= length {
-            return true;
-        }
-        else {
-            return false;
-        }
     
-    }
+
 
     ///returns weather or not a control_pad_button was hit on the same frame as a stick direction
     /// 
@@ -562,165 +506,6 @@ impl fmt::Display for InputDirectionRaw {
         
     }
 
-unsafe fn inc_specific_charge_time(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection) {
-    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-
-    if dir == InputDirection::NEUTRAL || dir == InputDirection::ERROR {
-        
-        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-        DOWN_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-
-        BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-
-        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-        UP_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-            
-        return;        
-
-    }
-        
-    if dir != InputDirection::DOWN_BACK && DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
-
-        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-
-    }
-    else if dir == InputDirection::DOWN_BACK {
-
-        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
-
-    }
-
-    if dir != InputDirection::DOWN && DOWN_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
-
-        DOWN_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-
-    }
-    else if dir == InputDirection::DOWN {
-
-        DOWN_SPECIFIC_CHARGE_TIME[entry_id] += 1;
-            
-    }
-
-    if dir != InputDirection::DOWN_FORWARD && DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
-
-        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-
-    }
-    else if dir == InputDirection::DOWN_FORWARD {
-
-        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
-            
-    }
-
-    if dir != InputDirection::BACK && BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
-
-        BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-
-    }
-    else if dir == InputDirection::BACK {
-
-        BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
-            
-    }
-
-    if dir != InputDirection::FORWARD && FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
-
-        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-
-    }
-    else if dir == InputDirection::FORWARD {
-
-        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
-            
-    }
-
-    if dir != InputDirection::UP_BACK && UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
-
-        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-
-    }
-    else if dir == InputDirection::UP_BACK {
-
-        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
-            
-    }
-
-    if dir != InputDirection::UP && UP_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
-
-        UP_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-
-    }
-    else if dir == InputDirection::UP {
-
-        UP_SPECIFIC_CHARGE_TIME[entry_id] += 1;
-            
-    }
-
-    if dir != InputDirection::UP_FORWARD && UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
-
-        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
-
-    }
-    else if dir == InputDirection::UP_FORWARD {
-
-        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
-            
-    }
-}
-///helper fn for is_perfect_input
-unsafe fn get_specific_charge_time(module_accessor:*mut BattleObjectModuleAccessor, dir: &InputDirection) -> i32{
-        
-    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-
-    if *dir == InputDirection::DOWN_BACK {
-
-        return DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id];
-
-    }
-    else if *dir == InputDirection::DOWN {
-
-        return DOWN_SPECIFIC_CHARGE_TIME[entry_id];
-
-    }
-    else if *dir == InputDirection::DOWN_FORWARD {
-
-        return DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
-
-    }
-    else if *dir == InputDirection::BACK {
-
-        return BACK_SPECIFIC_CHARGE_TIME[entry_id];
-
-    }
-    else if *dir == InputDirection::FORWARD {
-
-        return FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
-
-    }
-    else if *dir == InputDirection::UP_BACK {
-
-        return UP_BACK_SPECIFIC_CHARGE_TIME[entry_id];
-
-    }
-    else if *dir == InputDirection::UP {
-
-        return UP_SPECIFIC_CHARGE_TIME[entry_id];
-
-    }
-    else if *dir == InputDirection::UP_FORWARD {
-
-        return UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
-
-    }
-
-    return i32::MAX;
-
-}
-
-
 pub unsafe fn update_is_perfect(fighter: &mut L2CFighterCommon) {
 
     let entry_id = WorkModule::get_int(fighter.module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
@@ -789,7 +574,5 @@ pub unsafe fn update_is_perfect(fighter: &mut L2CFighterCommon) {
         
     }
 }
-
-//todo move charge input fn's to charge input module
 
 //todo add a perfect input varient for when the button is released
