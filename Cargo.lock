@@ -110,7 +110,7 @@ dependencies = [
 [[package]]
 name = "skyline_smash"
 version = "0.1.0"
-source = "git+https://github.com/ultimate-research/skyline-smash.git#f22c96bea33663cc45ff7ddaa6a140d5727a7931"
+source = "git+https://github.com/ultimate-research/skyline-smash.git#5c23ac5b81e7ea81c7365ff6ae3294e99568a2ce"
 dependencies = [
  "compile-time-lua-bind-hash",
  "lazy_static",

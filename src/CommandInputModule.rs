@@ -1,11 +1,4 @@
 use {
-    smash::{
-        lua2cpp::*, 
-        app::{ lua_bind::*, * }, 
-        lib::lua_const::*
-    }, 
-    std::usize,
-    core::fmt,
     super::ChargeInputModule::*
 }; 
 
@@ -118,8 +111,8 @@ pub static mut UP_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
 pub static mut UP_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
 
 
-impl fmt::Display for InputDirection {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Display for InputDirection {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             InputDirection::ERROR  => write!(f, "ERROR"),
             InputDirection::DOWN_BACK => write!(f, "DOWN_BACK"),
@@ -139,8 +132,8 @@ impl fmt::Display for InputDirection {
 
 
 
-impl fmt::Display for InputDirectionRaw {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Display for InputDirectionRaw {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             InputDirectionRaw::ERROR  => write!(f, "ERROR"),
             InputDirectionRaw::DOWN_LEFT => write!(f, "DOWN_LEFT"),
@@ -161,11 +154,11 @@ impl fmt::Display for InputDirectionRaw {
 
 /// returns the general direction of where the control stick is in with fighting game style inputs
 /// 
-pub unsafe fn get_stick_dir(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirection {
-    let stick_ang = ControlModule::get_stick_angle(module_accessor).to_degrees();
-    let stick_x = ControlModule::get_stick_x(module_accessor);
-    let stick_y = ControlModule::get_stick_y(module_accessor);
-    let lr = PostureModule::lr(module_accessor);
+pub unsafe fn get_stick_dir(module_accessor:*mut smash::app::BattleObjectModuleAccessor) -> InputDirection {
+    let stick_ang = smash::app::lua_bind::ControlModule::get_stick_angle(module_accessor).to_degrees();
+    let stick_x = smash::app::lua_bind::ControlModule::get_stick_x(module_accessor);
+    let stick_y = smash::app::lua_bind::ControlModule::get_stick_y(module_accessor);
+    let lr = smash::app::lua_bind::PostureModule::lr(module_accessor);
 
     if stick_x == 0.0 && stick_y == 0.0 {
         return InputDirection::NEUTRAL;
@@ -244,11 +237,11 @@ pub unsafe fn get_stick_dir(module_accessor:*mut BattleObjectModuleAccessor) -> 
     
 }
 /// returns the general direction of where the control stick was LAST FRAME with fighting game style inputs
-pub unsafe fn get_prev_stick_dir(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirection {
+pub unsafe fn get_prev_stick_dir(module_accessor:*mut smash::app::BattleObjectModuleAccessor) -> InputDirection {
     
-    let stick_x = ControlModule::get_stick_prev_x(module_accessor);
-    let stick_y = ControlModule::get_stick_prev_y(module_accessor);
-    let lr = PostureModule::lr(module_accessor);
+    let stick_x = smash::app::lua_bind::ControlModule::get_stick_prev_x(module_accessor);
+    let stick_y = smash::app::lua_bind::ControlModule::get_stick_prev_y(module_accessor);
+    let lr = smash::app::lua_bind::PostureModule::lr(module_accessor);
 
     let rad_ang = stick_y.atan2(stick_x);
 
@@ -329,10 +322,10 @@ pub unsafe fn get_prev_stick_dir(module_accessor:*mut BattleObjectModuleAccessor
 
 }
 /// returns the general direction of where the control stick is in with general controller inputs
-pub unsafe fn get_stick_dir_raw(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirectionRaw {
-    let stick_ang = ControlModule::get_stick_angle(module_accessor).to_degrees();
-    let stick_x = ControlModule::get_stick_x(module_accessor);
-    let stick_y = ControlModule::get_stick_y(module_accessor);
+pub unsafe fn get_stick_dir_raw(module_accessor:*mut smash::app::BattleObjectModuleAccessor) -> InputDirectionRaw {
+    let stick_ang = smash::app::lua_bind::ControlModule::get_stick_angle(module_accessor).to_degrees();
+    let stick_x = smash::app::lua_bind::ControlModule::get_stick_x(module_accessor);
+    let stick_y = smash::app::lua_bind::ControlModule::get_stick_y(module_accessor);
 
     if stick_x == 0.0 && stick_y == 0.0 {
         return InputDirectionRaw::NEUTRAL;
@@ -381,10 +374,10 @@ pub unsafe fn get_stick_dir_raw(module_accessor:*mut BattleObjectModuleAccessor)
     
 }
 /// returns the general direction of where the control stick was LAST FRAME with general controller inputs
-pub unsafe fn get_prev_stick_dir_raw(module_accessor:*mut BattleObjectModuleAccessor) -> InputDirectionRaw {
+pub unsafe fn get_prev_stick_dir_raw(module_accessor:*mut smash::app::BattleObjectModuleAccessor) -> InputDirectionRaw {
     
-    let stick_x = ControlModule::get_stick_prev_x(module_accessor);
-    let stick_y = ControlModule::get_stick_prev_y(module_accessor);
+    let stick_x = smash::app::lua_bind::ControlModule::get_stick_prev_x(module_accessor);
+    let stick_y = smash::app::lua_bind::ControlModule::get_stick_prev_y(module_accessor);
 
     let rad_ang = stick_y.atan2(stick_x);
 
@@ -463,39 +456,39 @@ pub unsafe fn get_prev_stick_dir_raw(module_accessor:*mut BattleObjectModuleAcce
 ///    FIGHTER_PAD_CMD_CAT4_FLAG_COMMAND_623STRICT = true;
 /// }
 /// ```
-pub unsafe fn is_perfect_input(module_accessor:*mut BattleObjectModuleAccessor, button: i32, dir: InputDirection, allow_extra_frame: bool, allow_negative_edge: bool, allow_cstick_perfect: bool) -> bool {
+pub unsafe fn is_perfect_input(module_accessor:*mut smash::app::BattleObjectModuleAccessor, button: i32, dir: InputDirection, allow_extra_frame: bool, allow_negative_edge: bool, allow_cstick_perfect: bool) -> bool {
     
     let stick_dir = get_stick_dir(module_accessor);
 
-    if ControlModule::check_button_on(module_accessor, *CONTROL_PAD_BUTTON_CSTICK_ON) && !allow_cstick_perfect {
+    if smash::app::lua_bind::ControlModule::check_button_on(module_accessor, *smash::lib::lua_const::CONTROL_PAD_BUTTON_CSTICK_ON) && !allow_cstick_perfect {
         
         // println!("i see a cstick");
         return false;
 
     }
 
-    if dir == stick_dir && get_prev_stick_dir(module_accessor) != dir && ControlModule::check_button_on_trriger(module_accessor, button) {
+    if dir == stick_dir && get_prev_stick_dir(module_accessor) != dir && smash::app::lua_bind::ControlModule::check_button_on_trriger(module_accessor, button) {
         // println!("perfect");
         //println!("dir is a {}", type_of(&dir));
         return true;
         }
 
     if allow_extra_frame {
-        if dir == stick_dir && get_specific_charge_time(module_accessor, &dir) <= 2 && ControlModule::check_button_on_trriger(module_accessor, button) {
+        if dir == stick_dir && get_specific_charge_time(module_accessor, &dir) <= 2 && smash::app::lua_bind::ControlModule::check_button_on_trriger(module_accessor, button) {
             // println!("lenient frame");
             return true;
         }
     }
 
     if allow_negative_edge {
-        if dir == stick_dir && get_prev_stick_dir(module_accessor) != dir && ControlModule::check_button_on_release(module_accessor, button) {
+        if dir == stick_dir && get_prev_stick_dir(module_accessor) != dir && smash::app::lua_bind::ControlModule::check_button_on_release(module_accessor, button) {
             // println!("negative edge perfect");
             return true;
         }
     }
 
     if allow_extra_frame && allow_negative_edge {
-        if dir == stick_dir && get_specific_charge_time(module_accessor, &dir) <= 2 && ControlModule::check_button_on_release(module_accessor, button) {
+        if dir == stick_dir && get_specific_charge_time(module_accessor, &dir) <= 2 && smash::app::lua_bind::ControlModule::check_button_on_release(module_accessor, button) {
             // println!("negative lenient frame");
             return true;
         }

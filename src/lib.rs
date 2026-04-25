@@ -26,14 +26,6 @@ pub enum InputType {
     Perfect
 
 }
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub enum StickType {
-
-    Both,
-    Control_Stick_Only,
-    C_Stick_Only
-    
-}
 
 impl fmt::Display for InputType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -50,7 +42,35 @@ impl fmt::Display for InputType {
             
         }
     }
+} 
+    
+
+impl InputType {
+    pub fn get_negative_instance(&self) -> InputType {
+        match self {
+
+            InputType::None => InputType::None,
+            InputType::On  => InputType::Off,
+            InputType::Off => InputType::On,
+            InputType::On_Trigger => InputType::On_Release,
+            InputType::On_Release => InputType::On_Trigger,
+            InputType::Trigger => InputType::Release,
+            InputType::Release => InputType::Trigger,
+            InputType::Perfect => InputType::Perfect
+
+        }
+    }
 }
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum StickType {
+
+    Both,
+    Control_Stick_Only,
+    C_Stick_Only
+    
+}
+
 
 /// A custom module made to make checking the current input a little bit easier
 pub mod CommandInputModule;
