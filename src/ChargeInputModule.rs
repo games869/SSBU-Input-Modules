@@ -481,8 +481,6 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let last_update_frame = &mut CHARGE_INPUT_STORAGE[entry_id].2;
-
-    // println!("frame: {frame}, ignore_repeat_frame: {ignore_repeat_frame}, update_charge_time: {update_charge_time}");
     
     if frame == *last_update_frame && !ignore_repeat_frame {
 
@@ -524,9 +522,6 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                 }
 
                 if update_charge_time && step != max_step && ( ( per_dir[input][step].direction.contains(&stick_dir) || per_dir[input][step].direction.contains(&NULL) ) && check_buttons(module_accessor, input, step) ) {
-
-                    println!("charge_time: {}, req: {}", per_input[input].charge_time, per_dir[input][step].required_charge_time + regress_mod);
-
                     if per_input[input].charge_time < ( per_dir[input][step].required_charge_time + regress_mod ) {
 
                         per_input[input].charge_time += 1;
@@ -631,8 +626,6 @@ unsafe fn check_buttons(module_accessor:*mut BattleObjectModuleAccessor, input: 
 
     let input_type = per_dir_vec[input][step].input_type;
     let require_multiple_pressed_inputs = per_dir_vec[input][step].require_multiple_pressed_inputs;
-
-    println!("input_type: {}", input_type);
 
     if input_type == InputType::None {
 
@@ -973,7 +966,6 @@ unsafe fn should_progress(module_accessor:*mut BattleObjectModuleAccessor, input
         || per_dir[input][step].direction.contains(&NULL) {true} 
         else {false};
 
-    println!("check_next: {}", check_buttons(module_accessor, input, step));
     if correct_stick && check_buttons(module_accessor, input, step) {//next
         
         return true

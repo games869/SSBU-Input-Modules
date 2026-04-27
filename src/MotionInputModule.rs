@@ -29,7 +29,7 @@ struct PerDir {
     button: Option<Vec<i32>>,
     input_type: InputType,
     allow_extra_frame: Option<bool>,
-    allow_negative_edge: Option<bool>,
+    allow_negative_edge: bool,
     allow_c_stick_input: Option<bool>,
     require_multiple_pressed_inputs: bool,
     strict: bool,
@@ -133,7 +133,7 @@ pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
             button: None, 
             input_type: InputType::None, 
             allow_extra_frame: None, 
-            allow_negative_edge: None, 
+            allow_negative_edge: false, 
             allow_c_stick_input: None,
             require_multiple_pressed_inputs: false,
             strict: false,
@@ -195,7 +195,7 @@ pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw
             button: None, 
             input_type: InputType::None, 
             allow_extra_frame: None, 
-            allow_negative_edge: None, 
+            allow_negative_edge: false, 
             allow_c_stick_input: None,
             require_multiple_pressed_inputs: false,
             strict: false,
@@ -295,7 +295,7 @@ pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
 /// MotionInputModule::change_life(fighter.entry_id, 0, 20);
 /// ``` 
 
-pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Vec<i32>, input_type: InputType, allow_extra_frame: Option<bool>, allow_negative_edge: Option<bool>, allow_c_stick_input: Option<bool>) {
+pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Vec<i32>, input_type: InputType, allow_negative_edge: bool, allow_extra_frame: Option<bool>, allow_c_stick_input: Option<bool>) {
 
     if !is_input_index_safe(entry_id, input, true, "add_button") || !is_step_index_safe(entry_id, input, step, true, "add_button") { return; }
         
@@ -471,7 +471,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                 let is_raw_input = per_dir_vec[inputs][step as usize].is_raw;
                 let dirs = per_dir_vec[inputs][step as usize].direction.clone();
                 let raw_dirs = per_dir_vec[inputs][step as usize].raw_direction.clone();
-                let is_missed_strict_timing = is_motion_correct(module_accessor, dirs.clone(), raw_dirs.clone(), is_raw_input, inputs) && !is_buttons_correct(module_accessor, inputs) || !is_motion_correct(module_accessor, dirs.clone(), raw_dirs.clone(), is_raw_input, inputs) && is_buttons_correct(module_accessor, inputs);
+                let is_missed_strict_timing = is_motion_correct(module_accessor, dirs.clone(), raw_dirs.clone(), is_raw_input, inputs) && !is_buttons_correct(module_accessor, inputs, step.into()) || !is_motion_correct(module_accessor, dirs.clone(), raw_dirs.clone(), is_raw_input, inputs) && is_buttons_correct(module_accessor, inputs, step.into());
 
                 if per_input_vec[inputs].life == 0 && ( !is_complete(module_accessor, inputs) || is_complete(module_accessor, inputs) && CancelModule::is_enable_cancel(module_accessor) ) {
 
@@ -486,7 +486,7 @@ pub unsafe fn update_module(module_accessor:*mut BattleObjectModuleAccessor, fra
                     per_input_vec[inputs].life = 0;
 
                 }
-                else if is_motion_correct(module_accessor, dirs, raw_dirs.clone(), is_raw_input, inputs) && is_buttons_correct(module_accessor, inputs) && step as usize != max_step {
+                else if is_motion_correct(module_accessor, dirs, raw_dirs.clone(), is_raw_input, inputs) && is_buttons_correct(module_accessor, inputs, step.into()) && step as usize != max_step {
 
                     let new_life = per_input_vec[inputs].default_life;
 
@@ -548,191 +548,308 @@ unsafe fn is_motion_correct(module_accessor:*mut BattleObjectModuleAccessor, mot
 
 }
 
-unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> bool {
+unsafe fn is_buttons_correct(module_accessor:*mut BattleObjectModuleAccessor, input: usize, step: usize) -> bool {
 
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
-    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
-    let step = per_input_vec[input].step as usize;
 
     let input_type = per_dir_vec[input][step].input_type;
     let require_multiple_pressed_inputs = per_dir_vec[input][step].require_multiple_pressed_inputs;
 
     if input_type == InputType::None {
 
-
         return true
 
     }
     else {
 
-    let buttons = per_dir_vec[input][step].button.clone().expect("could not find buttons to check");
+        let buttons = per_dir_vec[input][step].button.clone().expect("could not find buttons to check");
 
-    if require_multiple_pressed_inputs {
+        if !per_dir_vec[input][step].allow_negative_edge {
+            if require_multiple_pressed_inputs {
 
-        /*
+                /*
 
-        this is gonna be painfull to code im srry future me 
+                this is gonna be painfull to code im srry future me 
 
-        what needs to happen
+                what needs to happen
 
-            off 
-                while input is off dont break(done)
-            on 
-                while input is on dont break(done)
-            on_trigger
-                if input is on_trigger && other inputs are on dont break
-            on_release
-                if input is on_release && other inputs are off dont break
-            trigger
-                if input is trigger && other inputs are on dont break
-            release
-                if input is release && other inputs are off dont break
-            perfect
-                if inputes are perfect dont break(done)
-        */
+                    off 
+                        while input is off dont break(done)
+                    on 
+                        while input is on dont break(done)
+                    on_trigger
+                        if input is on_trigger && other inputs are on dont break
+                    on_release
+                        if input is on_release && other inputs are off dont break
+                    trigger
+                        if input is trigger && other inputs are on dont break
+                    release
+                        if input is release && other inputs are off dont break
+                    perfect
+                        if inputes are perfect dont break(done)
+                */
 
-        let mut ret = true;
-        let mut should_continue;
-        for button_index in 0..buttons.len() {
-            if !ControlModule::check_button_off(module_accessor, buttons[button_index]) && input_type == InputType::Off {
+                let mut ret = true;
 
-                ret = false;
-                break;
+                for button_index in 0..buttons.len() {
+                    let other_inputs_good =
+                        if [InputType::Off, InputType::On, InputType::Perfect].contains(&input_type) { true }
+                        else {
+                            let mut ret = false;
+                            
+                            for other_index in 0..buttons.len() {
+                                if button_index == other_index { continue; }
 
-            }
-            else if !ControlModule::check_button_on(module_accessor, buttons[button_index]) && input_type == InputType::On {
+                                if 
+                                    [InputType::Trigger, InputType::On_Trigger].contains(&input_type) && !ControlModule::check_button_on(module_accessor, buttons[other_index])
+                                    || [InputType::Release, InputType::On_Release].contains(&input_type) && !ControlModule::check_button_off(module_accessor, buttons[other_index])
+                                {
 
-                ret = false;
-                break;
+                                    break;
 
-            }
-            else if input_type == InputType::Perfect {
+                                }
+                                
+                                if other_index < buttons.len() - 1 { continue; }
+                            
+                                    
+                                ret = true;
 
-                should_continue = false;
-                let allow_extra_frame= per_dir_vec[input][step].allow_extra_frame.expect("could not find extra frame bool");
-                let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge.expect("could not find negative edge bool");
-                let allow_cstick_perfect = per_dir_vec[input][step].allow_c_stick_input.expect("could not find c-stick perfect bool");
+                            }
+                            
 
-                for dir_index in 0 .. per_dir_vec[input][step].direction.len() {
-                    
-                    let dir = per_dir_vec[input][step].direction[dir_index];
-                    
-                    if CommandInputModule::is_perfect_input(module_accessor, buttons[button_index], dir, allow_extra_frame, allow_negative_edge, allow_cstick_perfect) {
+                            ret
+                        }
+                    ;
+                    let skip: bool;
+                    if 
+                        input_type == InputType::Off && ControlModule::check_button_off(module_accessor, buttons[button_index])
+                        || input_type == InputType::On && ControlModule::check_button_on(module_accessor, buttons[button_index])
+                        || input_type == InputType::Trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index]) && other_inputs_good
+                        || input_type == InputType::Release && ControlModule::check_button_release(module_accessor, buttons[button_index]) && other_inputs_good
+                        || input_type == InputType::On_Trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) && other_inputs_good
+                        || input_type == InputType::On_Release && ControlModule::check_button_on_release(module_accessor, buttons[button_index]) && other_inputs_good
+
+                    {
+
+                        skip = true;
                         
-                        should_continue = true;
+                    }
+                    else if input_type == InputType::Perfect {
 
+                        let mut should_continue = false;
+                        let allow_extra_frame= per_dir_vec[input][step].allow_extra_frame.expect("could not find extra frame bool");
+                        let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge;
+                        let allow_cstick_perfect = per_dir_vec[input][step].allow_c_stick_input.expect("could not find c-stick perfect bool");
+
+                        for dir_index in 0 .. per_dir_vec[input][step].direction.len() {
+                    
+                            let dir = per_dir_vec[input][step].direction[dir_index];
+                    
+                            if CommandInputModule::is_perfect_input(module_accessor, buttons[button_index], dir, allow_extra_frame, allow_negative_edge, allow_cstick_perfect) {
+                        
+                                should_continue = true;
+
+                            }
+                        }
+
+                        skip = should_continue;
+
+                    }
+                    else {
+
+                        skip = false;
+
+                    }
+
+                    if !skip {
+
+                        ret = false;
+                        break;
                     }
                 }
 
-                if !should_continue {
+                return ret
 
-                    ret = false;
-                    break;
-
-                }
             }
-            else if input_type == InputType::Trigger {
-                
-                if 
-                    !ControlModule::check_button_trigger(module_accessor, buttons[button_index]) && 
-                    !ControlModule::check_button_on(module_accessor, buttons[button_index]) 
-                {
-                    ret = false;
-                    break;
-
-                }
-            }
-            else if input_type == InputType::On_Trigger  {
-                
-                if 
-                    !ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) && 
-                    !ControlModule::check_button_on(module_accessor, buttons[button_index]) 
-                {
-                    ret = false;
-                    break;
-
-                }
-            }
-            else if input_type == InputType::Release {
-                
-                if 
-                    !ControlModule::check_button_release(module_accessor, buttons[button_index]) && 
-                    !ControlModule::check_button_off(module_accessor, buttons[button_index]) 
-                {
-                    ret = false;
-                    break;
-
-                }
-            }
-            else if input_type == InputType::On_Release {
-                
-                if 
-                    !ControlModule::check_button_on_release(module_accessor, buttons[button_index]) && 
-                    !ControlModule::check_button_off(module_accessor, buttons[button_index]) 
-                {
-                    ret = false;
-                    break;
-
-                }
-            }
-        }
-        return ret
-    }
-    else {
-        for button_index in 0 .. buttons.len() {
+            else {
+                for button_index in 0 .. buttons.len() {
             
-            if input_type == InputType::Off && ControlModule::check_button_off(module_accessor, buttons[button_index]) {
+                    if 
+                        input_type == InputType::Off && ControlModule::check_button_off(module_accessor, buttons[button_index]) 
+                        || input_type == InputType::On && ControlModule::check_button_on(module_accessor, buttons[button_index])
+                        || input_type == InputType::On_Trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index])
+                        || input_type == InputType::On_Release && ControlModule::check_button_on_release(module_accessor, buttons[button_index])
+                        || input_type == InputType::Trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index])
+                        || input_type == InputType::Release && ControlModule::check_button_release(module_accessor, buttons[button_index])
+                    {
 
-                return true
+                       return true;
 
-            }
-            else if input_type == InputType::On && ControlModule::check_button_on(module_accessor, buttons[button_index]) {
+                    }
+                    else if input_type == InputType::Perfect {
 
-                return true
+                        let allow_extra_frame = per_dir_vec[input][step].allow_extra_frame.expect("unable to find extra frame bool");
+                        let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge;
+                        let allow_cstick_perfect = per_dir_vec[input][step].allow_c_stick_input.expect("unable to find c-stick input bool");
 
-            }
-            else if input_type == InputType::On_Trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) {
+                        for dir_index in 0 .. per_dir_vec[input][step].direction.len() {
 
-                return true
-                
-            }
-            else if input_type == InputType::On_Release && ControlModule::check_button_on_release(module_accessor, buttons[button_index]) {
+                            let dir = per_dir_vec[input][step].direction[dir_index];
 
-                return true
-
-            }
-            else if input_type == InputType::Trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index]) {
-
-                return true
-
-            }
-            else if input_type == InputType::Release && ControlModule::check_button_release(module_accessor, buttons[button_index]) {
-
-                return true
-
-            }
-            else if input_type == InputType::Perfect {
-
-                let allow_extra_frame = per_dir_vec[input][step].allow_extra_frame.expect("unable to find extra frame bool");
-                let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge.expect("unable to find negative edge bool");
-                let allow_cstick_perfect = per_dir_vec[input][step].allow_c_stick_input.expect("unable to find c-stick input bool");
-
-                for dir_index in 0 .. per_dir_vec[input][step].direction.len() {
-
-                    let dir = per_dir_vec[input][step].direction[dir_index];
-
-                    if CommandInputModule::is_perfect_input(module_accessor, buttons[button_index], dir, allow_extra_frame, allow_negative_edge, allow_cstick_perfect) {
+                            if CommandInputModule::is_perfect_input(module_accessor, buttons[button_index], dir, allow_extra_frame, allow_negative_edge, allow_cstick_perfect) {
                         
-                        return true
+                                return true
 
+                            }
+                        }
                     }
                 }
             }
         }
-    }
+        else {
+            
+            let negative_type = input_type.get_negative_instance();
+            
+            if !require_multiple_pressed_inputs {
+                
+                for button_index in 0 .. buttons.len() {
+            
+                    if 
+                        input_type == InputType::Off && ControlModule::check_button_off(module_accessor, buttons[button_index]) 
+                        || input_type == InputType::On && ControlModule::check_button_on(module_accessor, buttons[button_index])
+                        || input_type == InputType::On_Trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index])
+                        || input_type == InputType::On_Release && ControlModule::check_button_on_release(module_accessor, buttons[button_index])
+                        || input_type == InputType::Trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index])
+                        || input_type == InputType::Release && ControlModule::check_button_release(module_accessor, buttons[button_index])
+                    {
+
+                       return true;
+
+                    }
+                    else if input_type == InputType::Perfect {
+
+                        let allow_extra_frame = per_dir_vec[input][step].allow_extra_frame.expect("unable to find extra frame bool");
+                        let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge;
+                        let allow_cstick_perfect = per_dir_vec[input][step].allow_c_stick_input.expect("unable to find c-stick input bool");
+
+                        for dir_index in 0 .. per_dir_vec[input][step].direction.len() {
+
+                            let dir = per_dir_vec[input][step].direction[dir_index];
+
+                            if CommandInputModule::is_perfect_input(module_accessor, buttons[button_index], dir, allow_extra_frame, allow_negative_edge, allow_cstick_perfect) {
+                        
+                                return true
+
+                            }
+                        }
+                    }
+
+                    if 
+                        negative_type == InputType::Off && ControlModule::check_button_off(module_accessor, buttons[button_index]) 
+                        || negative_type == InputType::On && ControlModule::check_button_on(module_accessor, buttons[button_index])
+                        || negative_type == InputType::On_Trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index])
+                        || negative_type == InputType::On_Release && ControlModule::check_button_on_release(module_accessor, buttons[button_index])
+                        || negative_type == InputType::Trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index])
+                        || negative_type == InputType::Release && ControlModule::check_button_release(module_accessor, buttons[button_index])
+                    {
+
+                       return true;
+
+                    }
+                }
+            }
+            else {
+
+                let mut ret = false;
+                for button_index in 0 .. buttons.len() {
+                    let mut skip_break = false;
+                    let other_inputs_good =
+                        if [InputType::Off, InputType::On, InputType::Perfect, InputType::None].contains(&input_type) { true }
+                        else {
+                            let mut ret = true;
+                            for other_index in 0..buttons.len() {
+
+                                if button_index == other_index { continue; }
+
+                                if 
+                                    !(input_type == InputType::On_Trigger && ControlModule::check_button_on(module_accessor, buttons[other_index])
+                                    || input_type == InputType::On_Release && ControlModule::check_button_off(module_accessor, buttons[other_index]) 
+                                    || input_type == InputType::Trigger && ControlModule::check_button_on(module_accessor, buttons[other_index]) 
+                                    || input_type == InputType::Release && ControlModule::check_button_off(module_accessor, buttons[other_index]) 
+
+                                    || negative_type == InputType::On_Trigger && ControlModule::check_button_on(module_accessor, buttons[other_index]) 
+                                    || negative_type == InputType::On_Release && ControlModule::check_button_off(module_accessor, buttons[other_index]) 
+                                    || negative_type == InputType::Trigger && ControlModule::check_button_on(module_accessor, buttons[other_index]) 
+                                    || negative_type == InputType::Release && ControlModule::check_button_off(module_accessor, buttons[other_index]))
+                                {
+
+                                    ret = false;
+                                    break;
+
+                                }
+                            }
+
+                            ret
+
+                        }
+                    ;
+                    
+                    if 
+                        input_type == InputType::Off && ControlModule::check_button_off(module_accessor, buttons[button_index]) 
+                        || input_type == InputType::On && ControlModule::check_button_on(module_accessor, buttons[button_index])
+                        || input_type == InputType::On_Trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) && other_inputs_good
+                        || input_type == InputType::On_Release && ControlModule::check_button_on_release(module_accessor, buttons[button_index]) && other_inputs_good
+                        || input_type == InputType::Trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index]) && other_inputs_good
+                        || input_type == InputType::Release && ControlModule::check_button_release(module_accessor, buttons[button_index]) && other_inputs_good
+
+                        || negative_type == InputType::Off && ControlModule::check_button_off(module_accessor, buttons[button_index]) 
+                        || negative_type == InputType::On && ControlModule::check_button_on(module_accessor, buttons[button_index])
+                        || negative_type == InputType::On_Trigger && ControlModule::check_button_on_trriger(module_accessor, buttons[button_index]) && other_inputs_good
+                        || negative_type == InputType::On_Release && ControlModule::check_button_on_release(module_accessor, buttons[button_index]) && other_inputs_good
+                        || negative_type == InputType::Trigger && ControlModule::check_button_trigger(module_accessor, buttons[button_index]) && other_inputs_good
+                        || negative_type == InputType::Release && ControlModule::check_button_release(module_accessor, buttons[button_index]) && other_inputs_good
+                    {
+
+                        skip_break = true
+
+                    }
+                    else if input_type == InputType::Perfect {
+
+                        let allow_extra_frame = per_dir_vec[input][step].allow_extra_frame.expect("unable to find extra frame bool");
+                        let allow_negative_edge = per_dir_vec[input][step].allow_negative_edge;
+                        let allow_cstick_perfect = per_dir_vec[input][step].allow_c_stick_input.expect("unable to find c-stick input bool");
+
+                        for dir_index in 0 .. per_dir_vec[input][step].direction.len() {
+
+                            let dir = per_dir_vec[input][step].direction[dir_index];
+
+                            if CommandInputModule::is_perfect_input(module_accessor, buttons[button_index], dir, allow_extra_frame, allow_negative_edge, allow_cstick_perfect) {
+                        
+                                skip_break = true
+
+                            }
+                        }
+                    }
+                    if !skip_break {
+
+                        ret = false;
+                        break
+
+                    }
+                    else {
+
+                        ret = true;
+
+                    }
+                }
+
+                return ret;
+            }
+
+        }
 
     }
     
