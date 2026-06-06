@@ -1,6 +1,5 @@
-use {
-    super::ChargeInputModule::*
-}; 
+use super::*;
+use smash::lua2cpp::L2CFighterCommon;
 
 //a shit ton of stick angles for use in the CommandInputModule
 const FORWARD_HIGH: f32 = 15.0;
@@ -91,24 +90,24 @@ pub enum InputDirectionRaw {
 }
 
 
-pub static mut DOWN_CHARGE_TIME:[i32; 8] = [0; 8];
-pub static mut BACK_CHARGE_TIME:[i32; 8] = [0; 8];
-pub static mut UP_CHARGE_TIME:[i32; 8] = [0; 8];
-pub static mut FORWARD_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut DOWN_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut BACK_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut UP_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut FORWARD_CHARGE_TIME:[i32; 8] = [0; 8];
 
-pub static mut DOWN_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
-pub static mut BACK_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
-pub static mut UP_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
-pub static mut FORWARD_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+static mut DOWN_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+static mut BACK_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+static mut UP_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
+static mut FORWARD_CHARGE_BUFFER_TIME:[i32; 8] = [0; 8];
 
-pub static mut DOWN_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-pub static mut DOWN_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-pub static mut DOWN_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-pub static mut BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-pub static mut FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-pub static mut UP_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-pub static mut UP_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-pub static mut UP_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut DOWN_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut DOWN_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut DOWN_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut UP_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut UP_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
+static mut UP_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
 
 
 impl std::fmt::Display for InputDirection {
@@ -497,6 +496,273 @@ pub unsafe fn is_perfect_input(module_accessor:*mut smash::app::BattleObjectModu
     
     return false;
     
+}
+
+unsafe fn inc_specific_charge_time(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection) {
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+
+    if dir == InputDirection::NEUTRAL || dir == InputDirection::ERROR {
+        
+        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        DOWN_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+        BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+        UP_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+            
+        return;        
+
+    }
+        
+    if dir != InputDirection::DOWN_BACK && DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::DOWN_BACK {
+
+        DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+
+    }
+
+    if dir != InputDirection::DOWN && DOWN_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        DOWN_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::DOWN {
+
+        DOWN_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::DOWN_FORWARD && DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::DOWN_FORWARD {
+
+        DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::BACK && BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::BACK {
+
+        BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::FORWARD && FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::FORWARD {
+
+        FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::UP_BACK && UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::UP_BACK {
+
+        UP_BACK_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::UP && UP_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        UP_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::UP {
+
+        UP_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+
+    if dir != InputDirection::UP_FORWARD && UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] != 0 {
+
+        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] = 0;
+
+    }
+    else if dir == InputDirection::UP_FORWARD {
+
+        UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id] += 1;
+            
+    }
+}
+///helper fn for is_perfect_input
+pub unsafe fn get_specific_charge_time(module_accessor:*mut BattleObjectModuleAccessor, dir: &InputDirection) -> i32{
+        
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+
+    if *dir == InputDirection::DOWN_BACK {
+
+        return DOWN_BACK_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::DOWN {
+
+        return DOWN_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::DOWN_FORWARD {
+
+        return DOWN_FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::BACK {
+
+        return BACK_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::FORWARD {
+
+        return FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::UP_BACK {
+
+        return UP_BACK_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::UP {
+
+        return UP_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+    else if *dir == InputDirection::UP_FORWARD {
+
+        return UP_FORWARD_SPECIFIC_CHARGE_TIME[entry_id];
+
+    }
+
+    return i32::MAX;
+
+}
+
+
+pub unsafe fn update_is_perfect(fighter: &mut L2CFighterCommon) {
+
+    let entry_id = WorkModule::get_int(fighter.module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+    let dir = get_stick_dir(fighter.module_accessor);
+
+    if !StatusModule::is_changing(fighter.module_accessor) { 
+        if dir == InputDirection::DOWN || dir == InputDirection::DOWN_BACK || dir == InputDirection::DOWN_FORWARD {
+            
+            DOWN_CHARGE_TIME[entry_id] += 1;
+            DOWN_CHARGE_BUFFER_TIME[entry_id] = 9;
+
+        }
+        else {
+            if DOWN_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                DOWN_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if DOWN_CHARGE_TIME[entry_id] != 0 {
+                
+                DOWN_CHARGE_TIME[entry_id] = 0;
+
+            }
+        } 
+        if dir == InputDirection::BACK || dir == InputDirection::UP_BACK || dir == InputDirection::DOWN_BACK {
+            BACK_CHARGE_TIME[entry_id] += 1;
+            BACK_CHARGE_BUFFER_TIME[entry_id] = 9;
+        }
+        else {
+            if BACK_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                BACK_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if BACK_CHARGE_TIME[entry_id] != 0 {
+                BACK_CHARGE_TIME[entry_id] = 0;
+            }
+        }
+
+        if dir == InputDirection::UP || dir == InputDirection::UP_BACK || dir == InputDirection::UP_FORWARD {
+            UP_CHARGE_TIME[entry_id] += 1;
+            UP_CHARGE_BUFFER_TIME[entry_id] = 9;
+
+        }
+        else {
+            if UP_CHARGE_BUFFER_TIME[entry_id] > 0 {
+                UP_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if UP_CHARGE_TIME[entry_id] != 0 {
+        
+                UP_CHARGE_TIME[entry_id] = 0;
+        
+            }
+        }
+
+        if dir == InputDirection::FORWARD || dir == InputDirection::UP_FORWARD || dir == InputDirection::DOWN_FORWARD {
+            FORWARD_CHARGE_TIME[entry_id] += 1;
+            FORWARD_CHARGE_BUFFER_TIME[entry_id] = 9;
+        }
+        else {
+            if FORWARD_CHARGE_BUFFER_TIME[entry_id] > 0 {
+            FORWARD_CHARGE_BUFFER_TIME[entry_id] -= 1;
+            }
+            else if FORWARD_CHARGE_TIME[entry_id] != 0 {
+                FORWARD_CHARGE_TIME[entry_id] = 0;
+            }
+        }
+
+        inc_specific_charge_time(fighter.module_accessor, dir);
+        
+    }
+}
+
+/// Returns whether or not module_accessor has held a cardinal InputDirection for a desired number of frames
+/// 
+/// terrys rising tackle needs 24 frames for the charge input
+///
+/// # Arguments
+///
+/// * `module_accessor` - a pointer to BattleObjectModuleAccessor
+/// 
+/// * `dir` - the direction that needs to be charged InputDirection
+///
+/// * `length` - the number of frames the input must be held for i32 
+///
+/// # Example
+///
+/// ``` if the player has charged down on the control stick for 24 frames multiply the attack power by 1.5
+/// if CommandInputModule::is_charged(agent.module_accessor, InputDirection::DOWN, 24) {
+///    AttackModule::set_power_up(agent.module_accessor, 1.5);    
+/// }
+/// ```
+pub unsafe fn is_charged(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection, length: i32) -> bool {
+    let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
+    if dir == InputDirection::DOWN && DOWN_CHARGE_TIME[entry_id] >= length {
+        return true;
+    }
+    else if dir == InputDirection::BACK && BACK_CHARGE_TIME[entry_id] >= length {
+        return true;
+    }
+    else if dir == InputDirection::UP && UP_CHARGE_TIME[entry_id] >= length {
+        return true;
+    }
+    else if dir == InputDirection::FORWARD && FORWARD_CHARGE_TIME[entry_id] >= length {
+        return true;
+    }
+    else {
+        return false;
+    }
+
 }
 
 //todo add a perfect input varient for when the button is released
