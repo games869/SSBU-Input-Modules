@@ -1,12 +1,9 @@
 [package]
 name = "inputmodule"
-version = "1.0.0"
-authors = ["games869"]
+version = "1.1.0"
+authors = ["games"]
 edition = "2018"
 description = "A library for helping make the creation of custom motion and charge inputs for super smash bros ultimate more accessible"
-
-[lib]
-crate-type = ["cdylib", "lib"]
 
 [dependencies]
 skyline = { git = "https://github.com/ultimate-research/skyline-rs.git" }
