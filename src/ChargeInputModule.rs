@@ -1,6 +1,6 @@
 use {
-
-    super::{ CommandInputModule::{ InputDirection::*, *  }, InputType, StickType, *}, 
+    super::{ InputType, StickType, CommandInputModule, InputDirection::{self, *}, ToDirVector, ToVector },     
+    smash::{ app::{ BattleObjectModuleAccessor, lua_bind::{ WorkModule, ControlModule } }, lib::lua_const::{ FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID, CONTROL_PAD_BUTTON_CSTICK_ON } },
     std::usize
 }; 
 
@@ -136,19 +136,27 @@ unsafe fn is_step_index_safe(entry_id: usize, input: usize, step: usize, should_
 ///             );
 ///     }
 /// ```
-pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
+pub unsafe fn add_charge<V: ToDirVector + Clone>(entry_id: usize, vec: Vec<V>) {
     
-    vec.push([NULL].to_vec());
+    let mut new_vec: Vec<Vec<InputDirection>> = vec![];
+
+    for i in 0..vec.len() {
+
+        new_vec.push(vec[i].clone().into_vec());
+
+    }
+
+    new_vec.push([NULL].to_vec());
     let per_dir_v = &mut CHARGE_INPUT_STORAGE[entry_id].1;
     let per_input_v = &mut CHARGE_INPUT_STORAGE[entry_id].0;
     let index = per_dir_v.len();
 
     per_dir_v.push(Vec::new());
 
-    for i in 0..vec.len() {
+    for i in 0..new_vec.len() {
 
         let blank_dir: PerDir = PerDir { 
-            direction: vec[i].clone(), 
+            direction: new_vec[i].clone(), 
             button: None, 
             input_type: InputType::None, 
             allow_extra_frame: None, 
@@ -219,66 +227,101 @@ pub unsafe fn add_charge(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 ///  ChargeInputModule::regress_with_failed_input(fighter.entry_id, 0);
 ///  
 /// ```
-pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Vec<i32>, input_type: InputType, allow_negative_edge: bool, allow_extra_frame: Option<bool>, allow_c_stick_input: Option<bool>) {
+pub unsafe fn add_button<V: ToVector + Clone, B: ToVector + Clone>(entry_id: usize, input: usize, step: V, buttons: Vec<B>, input_type: InputType, allow_negative_edge: bool, allow_extra_frame: Option<bool>, allow_c_stick_input: Option<bool>) {
+
+    if !is_input_index_safe(entry_id, input, true, "add_button") { return; }
+
+    let steps = step.as_usize_vec();
+
+    if steps.len() != buttons.len() && buttons.len() != 1 {
+        
+        let crash_msg = String::from("[inputmodule::ChargeInputModule::add_button] Error:\nfn has bad arguments\n\nstep len = (") + &steps.len().to_string() + ") but buttons len = " + &buttons.len().to_string() + ")\n\nbuttons should have the same length as step or 1 for it to be copyed to all steps";
+        skyline::error::show_error(89, "inputmodule error, press Details.\0", &crash_msg);
+        skyline::nn::oe::ExitApplication(); 
+
+    }
 
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
-    if !is_input_index_safe(entry_id, input, true, "add_button") || !is_step_index_safe(entry_id, input, step, true, "add_button") { return; }
-    
-    per_dir[input][step].button = Some(buttons);
-    per_dir[input][step].input_type = input_type;
-    per_dir[input][step].allow_extra_frame = allow_extra_frame;
-    per_dir[input][step].allow_negative_edge = allow_negative_edge;
-    per_dir[input][step].allow_c_stick_input = allow_c_stick_input;
+    for i in 0..steps.len() {
 
+        if !is_step_index_safe(entry_id, input, steps[i], true, "add_button") { return; }
+        
+        let index =
+            if buttons.len() == 1 { 0 }
+            else { i }
+        ;
 
+        per_dir[input][steps[i]].button = Some(buttons[index].clone().as_int_vec());
+        per_dir[input][steps[i]].input_type = input_type;
+        per_dir[input][steps[i]].allow_extra_frame = allow_extra_frame;
+        per_dir[input][steps[i]].allow_negative_edge = allow_negative_edge;
+        per_dir[input][steps[i]].allow_c_stick_input = allow_c_stick_input;
+
+    }
 }
 
 /// Makes it so if the stick or the buttons are not correct but the other is the input resets
-pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
+pub unsafe fn add_strict<V: ToVector>(entry_id: usize, input: usize, step: V) {
 
-    if !is_input_index_safe(entry_id, input, true, "add_strict") || !is_step_index_safe(entry_id, input, step, true, "add_strict") { return; }
+    if !is_input_index_safe(entry_id, input, true, "add_strict") { return; }
 
-    let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
+    let steps = step.as_usize_vec();
 
-    per_dir_vec[input][step].strict = true;
+    for i in steps {
+        if !is_step_index_safe(entry_id, input, i, true, "add_strict") { return; }
+
+        let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
+
+        per_dir_vec[input][i].strict = true;
+    }
 }
 
 /// Makes it so you need to hit all the buttons on a given step before you can progress to the next step
-pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step: usize) {
+pub unsafe fn require_simultaneously_buttons<V: ToVector>(entry_id: usize, input: usize, step: V) {
 
-    if !is_input_index_safe(entry_id, input, true, "require_simultaneously_buttons") || !is_step_index_safe(entry_id, input, step, true, "require_simultaneously_buttons") { return; }
+    if !is_input_index_safe(entry_id, input, true, "require_simultaneously_buttons") { return; }
 
-    let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
+    let steps = step.as_usize_vec();
 
-    per_dir_vec[input][step].require_multiple_pressed_inputs = true;
+    for i in steps {
+        if !is_step_index_safe(entry_id, input, i, true, "require_simultaneously_buttons") { return; }
+
+        let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
+
+        per_dir_vec[input][i].require_multiple_pressed_inputs = true;
+    }
 }
 
 /// Sets the total amount of inputs that can be done in 1 frame
 /// 
 /// Defaults to 1 and wont allow any shortcutting
-pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
+pub unsafe fn set_max_shortcuts<V: ToVector>(entry_id: usize, input: V, new_max_shortcuts: u8) {
+    
+    let inputs = input.as_usize_vec();
 
-    if !is_input_index_safe(entry_id, input, true, "set_max_shortcuts") { return; }
+    for i in inputs {
+        if !is_input_index_safe(entry_id, i, true, "set_max_shortcuts") { return; }
 
-    let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+        let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
-    per_input_vec[input].max_shortcuts = new_max_shortcuts;
-
+        per_input_vec[i].max_shortcuts = new_max_shortcuts;
+    }
 }
 
 /// Allows the input to check the next input in the series on the same frame
-pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
+pub unsafe fn allow_shortcut<V: ToVector>(entry_id: usize, input: usize, step: V) {
 
     if !is_input_index_safe(entry_id, input, true, "allow_shortcut") { return; }
 
+    let steps = step.as_usize_vec();
     let per_dir_vec = &mut CHARGE_INPUT_STORAGE[entry_id].1;
     
-    for step in steps {
+    for i in steps {
 
-       if !is_step_index_safe(entry_id, input, step, true, "allow_shortcut") { return; }
+       if !is_step_index_safe(entry_id, input, i, true, "allow_shortcut") { return; }
         
-        per_dir_vec[input][step].can_shortcut = true;
+        per_dir_vec[input][i].can_shortcut = true;
 
     }
 }
@@ -320,105 +363,143 @@ pub unsafe fn get_charge_time(module_accessor:*mut BattleObjectModuleAccessor, i
 }
 
 /// Checks if the charge input is on the final step
-pub unsafe fn is_complete(entry_id: usize, input: usize) -> bool {
+pub unsafe fn is_complete<V: ToVector>(entry_id: usize, input: V) -> bool {
     
+    let inputs = input.as_usize_vec();
     let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
-    let step = per_input[input].step as usize;
-    let final_step = per_dir[input].len() - 2;
 
-    if !is_input_index_safe(entry_id, input, false, "is_complete") { return false; }
+    for i in inputs {
+        let step = per_input[i].step as usize;
+        let final_step = per_dir[i].len() - 2;
 
-    if step == final_step {
+        if !is_input_index_safe(entry_id, i, false, "is_complete") { continue; }
 
-        return true
+        if step == final_step {
 
+            return true
+
+        }
     }
 
     false
     
 }
 /// Sets a custom value for how long an input can exist before being reset
-pub unsafe fn set_life(entry_id: usize, input: usize, new_life: u8) {
+pub unsafe fn set_life<V: ToVector>(entry_id: usize, input: V, new_life: u8) {
 
-    if !is_input_index_safe(entry_id, input, true, "set_life") { return; }
+    let inputs = input.as_usize_vec();
 
-    let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
+    for i in inputs {
+        if !is_input_index_safe(entry_id, i, true, "set_life") { return; }
 
-    for i in 0..per_dir[input].len() {
+        let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
+
+        for index in 0..per_dir[i].len() {
+
+            per_dir[i][index].default_life = new_life;
+
+        }
+    }
+}
+
+/// Sets a custom value for a specific step for how long an input can exist before being reset
+pub unsafe fn set_specific_life<V: ToVector>(entry_id: usize, input: usize, step: V, new_life: u8) {
+
+    if !is_input_index_safe(entry_id, input, true, "set_specific_life") { return; }
+
+    let steps = step.as_usize_vec();
+
+    for i in steps {
+
+        if !is_step_index_safe(entry_id, input, i, true, "set_specific_life") { return; }
+
+        let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
         per_dir[input][i].default_life = new_life;
 
     }
 }
 
-/// Sets a custom value for a specific step for how long an input can exist before being reset
-pub unsafe fn set_specific_life(entry_id: usize, input: usize, step: usize, new_life: u8) {
-
-    if !is_input_index_safe(entry_id, input, true, "set_specific_life") || !is_step_index_safe(entry_id, input, step, true, "set_specific_life") { return; }
-
-    let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
-
-    per_dir[input][step].default_life = new_life;
-
-}
-
 /// Sets a custom value for how long you need to hold an input before you can progress to the next
-pub unsafe fn set_charge_time(entry_id: usize, input: usize, step: usize, new_charge_time: u8) {
+pub unsafe fn set_charge_time<V: ToVector>(entry_id: usize, input: usize, step: V, new_charge_time: u8) {
 
-    if !is_input_index_safe(entry_id, input, true, "set_charge_time") || !is_step_index_safe(entry_id, input, step, true, "set_charge_time") { return; }
+    if !is_input_index_safe(entry_id, input, true, "set_charge_time") { return; }
 
+    let steps = step.as_usize_vec();
     let per_dir = &mut CHARGE_INPUT_STORAGE[entry_id].1;
 
-    per_dir[input][step].required_charge_time = new_charge_time;
+    for i in steps {
 
+        if !is_step_index_safe(entry_id, input, i, true, "set_charge_time") { return; }
+
+        per_dir[input][i].required_charge_time = new_charge_time;
+
+    }
 }
 
 /// Makes it so when an input is not being held the charge time decrements by 1
-pub unsafe fn regress_with_failed_input(entry_id: usize, input: usize) {
+pub unsafe fn regress_with_failed_input<V: ToVector>(entry_id: usize, input: V) {
 
-    if !is_input_index_safe(entry_id, input, true, "regress_with_failed_input") { return; }
+    let inputs = input.as_usize_vec();
+
+    for i in inputs {
+        if !is_input_index_safe(entry_id, i, true, "regress_with_failed_input") { return; }
     
-    let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+        let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
-    per_input[input].regress_with_failed_input = true;
+        per_input[i].regress_with_failed_input = true;
+    }
 }
 
 /// Resets the input manually
-pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) {
+pub unsafe fn reset_input_step<V: ToVector>(module_accessor:*mut BattleObjectModuleAccessor, input: V) {
 
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+    let inputs = input.as_usize_vec();
 
-    if !is_input_index_safe(entry_id, input, false, "reset_input_step") { return; }
+    for i in inputs {
+
+        if !is_input_index_safe(entry_id, i, false, "reset_input_step") { return; }
     
-    per_input[input].charge_time = 0;
-    per_input[input].life = 0;
-    per_input[input].step = 0;
+        per_input[i].charge_time = 0;
+        per_input[i].life = 0;
+        per_input[i].step = 0;
+
+    }
 }
 
 /// Makes it so the only way an input can be reset is with ChargeInputModule::reset_input_step
-pub unsafe fn require_manual_input_kill(entry_id: usize, input: usize) {
+pub unsafe fn require_manual_input_kill<V: ToVector>(entry_id: usize, input: V) {
+    
+    let inputs = input.as_usize_vec();
+    
+    for i in inputs {
 
-    if !is_input_index_safe(entry_id, input, true, "require_manual_input_kill") { return; }
+        if !is_input_index_safe(entry_id, i, true, "require_manual_input_kill") { return; }
 
-    let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+        let per_input = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
-    per_input[input].require_manual_input_kill = true;
+        per_input[i].require_manual_input_kill = true;
 
+    }
 }
 
 /// Changes which control stick can update the charge inputs
 /// 
 /// by default its set to control_stick_only
-pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
+pub unsafe fn set_stick_type<V: ToVector>(entry_id: usize, input: V, new_stick_type: StickType) {
 
-    if !is_input_index_safe(entry_id, input, true, "set_stick_type") { return; }
+    let inputs = input.as_usize_vec();
+
+    for i in inputs {
+        if !is_input_index_safe(entry_id, i, true, "set_stick_type") { return; }
     
-    let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
+        let per_input_vec = &mut CHARGE_INPUT_STORAGE[entry_id].0;
 
-    per_input_vec[input].stick_type = new_stick_type;
-
+        per_input_vec[i].stick_type = new_stick_type;
+    }
 }
 
 /// Resets the data in the module so the next fighter can use it
@@ -987,7 +1068,7 @@ unsafe fn should_progress(module_accessor:*mut BattleObjectModuleAccessor, input
 /// * `dir` - the direction that is being checked InputDirection
 /// 
 pub unsafe fn is_charging(module_accessor:*mut BattleObjectModuleAccessor, dir: InputDirection) -> bool {
-    if get_stick_dir(module_accessor) == get_prev_stick_dir(module_accessor) && get_stick_dir(module_accessor) == dir {
+    if CommandInputModule::get_stick_dir(module_accessor) == CommandInputModule::get_prev_stick_dir(module_accessor) && CommandInputModule::get_stick_dir(module_accessor) == dir {
         return true;
     }
     else {

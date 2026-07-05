@@ -43,51 +43,6 @@ const UP_FORWARD_LOW: f32 = 15.0;
 /// A general list of directions the control stick could be in formatted like 2d fighting game notation 
 /// 
 /// Forward and back are always alinged with the character
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub enum InputDirection {
-
-    ERROR,
-    /// 1 in fighing game notation
-    DOWN_BACK,
-    /// 2 in fighing game notation
-    DOWN,
-    /// 3 in fighing game notation
-    DOWN_FORWARD,
-    /// 4 in fighting game notation
-    BACK,
-    /// No direction being held
-    /// 
-    /// 5 in fighting game notation
-    NEUTRAL,
-    /// 6 in fighting game notation
-    FORWARD,
-    /// 7 in fighting game notation
-    UP_BACK,
-    /// 8 in fighting game notation
-    UP,
-    /// 9 in fighting game notation
-    UP_FORWARD,
-
-    NULL
-    
-}
-/// A general list of directions the control stick could be in
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub enum InputDirectionRaw {
-
-    ERROR,
-    DOWN_LEFT,
-    DOWN,
-    DOWN_RIGHT,
-    LEFT,
-    NEUTRAL,
-    RIGHT,
-    UP_LEFT,
-    UP,
-    UP_RIGHT,
-    NULL
-
-}
 
 
 static mut DOWN_CHARGE_TIME:[i32; 8] = [0; 8];
@@ -108,46 +63,6 @@ static mut FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
 static mut UP_BACK_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
 static mut UP_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
 static mut UP_FORWARD_SPECIFIC_CHARGE_TIME:[i32; 8] = [0; 8];
-
-
-impl std::fmt::Display for InputDirection {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            InputDirection::ERROR  => write!(f, "ERROR"),
-            InputDirection::DOWN_BACK => write!(f, "DOWN_BACK"),
-            InputDirection::DOWN => write!(f, "DOWN"),
-            InputDirection::DOWN_FORWARD => write!(f, "DOWN_FORWARD"),
-            InputDirection::BACK => write!(f, "BACK"),
-            InputDirection::NEUTRAL => write!(f, "NEUTRAL"),
-            InputDirection::FORWARD => write!(f, "FORWARD"),
-            InputDirection::UP_BACK => write!(f, "UP_BACK"),
-            InputDirection::UP => write!(f, "UP"),
-            InputDirection::UP_FORWARD => write!(f, "UP_FORWARD"),
-            InputDirection::NULL => write!(f, "NULL"),
-
-        }
-    }
-}
-
-
-
-impl std::fmt::Display for InputDirectionRaw {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            InputDirectionRaw::ERROR  => write!(f, "ERROR"),
-            InputDirectionRaw::DOWN_LEFT => write!(f, "DOWN_LEFT"),
-            InputDirectionRaw::DOWN => write!(f, "DOWN"),
-            InputDirectionRaw::DOWN_RIGHT => write!(f, "DOWN_RIGHT"),
-            InputDirectionRaw::LEFT => write!(f, "LEFT"),
-            InputDirectionRaw::NEUTRAL => write!(f, "NEUTRAL"),
-            InputDirectionRaw::RIGHT => write!(f, "RIGHT"),
-            InputDirectionRaw::UP_LEFT => write!(f, "UP_LEFT"),
-            InputDirectionRaw::UP => write!(f, "UP"),
-            InputDirectionRaw::UP_RIGHT => write!(f, "UP_RIGHT"),
-            InputDirectionRaw::NULL => write!(f, "NULL")
-        }
-    }
-}
 
 /// A custom Module made to make the reading inputs easier
 

@@ -1,9 +1,6 @@
 use {
-    smash::{
-        app::{ lua_bind::*, * }, 
-        lib::lua_const::*
-    },
-    super::{ *, InputType, StickType, CommandInputModule::{ *, InputDirection::*  }}, 
+    super::{InputType, StickType, CommandInputModule, InputDirection::{self, *}, InputDirectionRaw::{self}, ToDirVector, ToRawDirVector, ToVector}, 
+    smash::{ app::{ lua_bind::*, * }, lib::lua_const::* },
     std::usize
 }; 
 
@@ -36,7 +33,6 @@ struct PerDir {
     can_shortcut: bool,
 
 }
-
 
 const DEFAULT_LIFE: u8 = 9;
 
@@ -115,20 +111,28 @@ unsafe fn is_step_index_safe(entry_id: usize, input: usize, step: usize, should_
 ///         
 ///     }
 /// ```
-pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
+pub unsafe fn add_motion<V: ToDirVector + Clone >(entry_id: usize, vec: Vec<V>) {
+    
+    let mut new_vec: Vec<Vec<InputDirection>> = vec![];
 
-    vec.push([NULL].to_vec());
+    for i in 0..vec.len() {
+
+        new_vec.push(vec[i].clone().into_vec());
+
+    }
+
+    new_vec.push([NULL].to_vec());
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
     let index = per_dir_vec.len();
 
     per_dir_vec.push(Vec::new());
 
-    for i in 0..vec.len() {
+    for i in 0..new_vec.len() {
 
         let blank_dir: PerDir = PerDir { 
             is_raw: false,
-            direction: vec[i].clone(), 
+            direction: new_vec[i].clone(), 
             raw_direction: Vec::new(),
             button: None, 
             input_type: InputType::None, 
@@ -177,21 +181,29 @@ pub unsafe fn add_motion(entry_id: usize, mut vec: Vec<Vec<InputDirection>>) {
 ///         
 ///     }
 /// ```
-pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw>>) {
+pub unsafe fn add_raw_motion<V: ToRawDirVector + Clone>(entry_id: usize, vec: Vec<V>) {
 
-    vec.push([InputDirectionRaw::NULL].to_vec());
+    let mut new_vec: Vec<Vec<InputDirectionRaw>> = vec![];
+
+    for i in 0..vec.len() {
+
+        new_vec.push(vec[i].clone().into_raw_vec());
+
+    }
+
+    new_vec.push([InputDirectionRaw::NULL].to_vec());
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
     let index = per_dir_vec.len();
 
     per_dir_vec.push(Vec::new());
 
-    for i in 0..vec.len() {
+    for i in 0..new_vec.len() {
 
         let blank_dir: PerDir = PerDir { 
             is_raw: true,
             direction: Vec::new(),
-            raw_direction: vec[i].clone(), 
+            raw_direction: new_vec[i].clone(), 
             button: None, 
             input_type: InputType::None, 
             allow_extra_frame: None, 
@@ -204,7 +216,6 @@ pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw
 
         per_dir_vec[index].push(blank_dir);
         
-        
     }
 
     let blank_input = PerInput {
@@ -214,22 +225,24 @@ pub unsafe fn add_raw_motion(entry_id: usize, mut vec: Vec<Vec<InputDirectionRaw
         max_shortcuts: 1,
         stick_type: StickType::Control_Stick_Only
     };
-    per_input_vec.push(blank_input);
 
+    per_input_vec.push(blank_input);
 
 }
 
 /// Resets an input manually 
-pub unsafe fn reset_input_step(module_accessor:*mut BattleObjectModuleAccessor, input: usize) {
+pub unsafe fn reset_input_step<V: ToVector>(module_accessor:*mut BattleObjectModuleAccessor, input: V) {
 
+    let inputs = input.as_usize_vec();
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
-    if !is_input_index_safe(entry_id, input, false, "reset_input_step") { return; }
+    for i in inputs {
+        if !is_input_index_safe(entry_id, i, false, "reset_input_step") { continue; }
 
-    per_input_vec[input].step = 0;
-    per_input_vec[input].life = 0;
-
+        per_input_vec[i].step = 0;
+        per_input_vec[i].life = 0;
+    }
 }
 
 /// Clears all the data in the Module so its ready for the next fighter
@@ -249,14 +262,17 @@ pub unsafe fn reset_module(module_accessor:*mut BattleObjectModuleAccessor) {
 /// Changes how long the input can go without a new step before its reset default is 9
 /// 
 /// for raging demon style inputs its best to change this to 20 
-pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
+pub unsafe fn change_life<V: ToVector>(entry_id: usize, input: V, new_life: u8) {
 
-    if !is_input_index_safe(entry_id, input, true, "change_life") { return; }
+    let inputs = input.as_usize_vec();
 
-    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
+    for i in inputs {
+        if !is_input_index_safe(entry_id, i, true, "change_life") { return; }
 
-    per_input_vec[input].default_life = new_life;
+        let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
+        per_input_vec[i].default_life = new_life;
+    }
 }
 
 /// Adds a button to a specific step of the input 
@@ -285,77 +301,115 @@ pub unsafe fn change_life(entry_id: usize, input: usize, new_life: u8) {
 /// use inputmodule::{*, InputType::*, CommandInputModule::{*, InputDirection::*}}
 /// 
 /// //adds the raging demon input
-/// MotionInputModule::add_motion(fighter.entry_id, [[NULL].to_vec(), [NULL].to_vec(), [FORWARD].to_vec(), [NULL].to_vec(), [NULL].to_vec()].to_vec());
-/// MotionInputModule::add_button(fighter.entry_id, 0, 0, [*CONTROL_PAD_BUTTON_ATTACK].to_vec(), trigger, None, None, None);
-/// MotionInputModule::add_button(fighter.entry_id, 0, 1, [*CONTROL_PAD_BUTTON_ATTACK].to_vec(), trigger, None, None, None);
-/// MotionInputModule::add_button(fighter.entry_id, 0, 3, [*CONTROL_PAD_BUTTON_ATTACK].to_vec(), trigger, None, None, None);
+/// MotionInputModule::add_motion(fighter.entry_id, [NULL, NULL, FORWARD, NULL, NULL].to_vec());
+/// MotionInputModule::add_button(fighter.entry_id, 0, [0, 1, 3], [*CONTROL_PAD_BUTTON_ATTACK].to_vec(), trigger, None, None, None);
 /// MotionInputModule::add_button(fighter.entry_id, 0, 4, [*CONTROL_PAD_BUTTON_SPECIAL].to_vec(), trigger, None, None, None);
 /// MotionInputModule::allow_shortcut(fighter.entry_id, 0, 2);
 /// MotionInputModule::set_max_shortcuts(fighter.entry_id, 0, 2);
 /// MotionInputModule::change_life(fighter.entry_id, 0, 20);
 /// ``` 
 
-pub unsafe fn add_button(entry_id: usize, input: usize, step: usize, buttons: Vec<i32>, input_type: InputType, allow_negative_edge: bool, allow_extra_frame: Option<bool>, allow_c_stick_input: Option<bool>) {
+pub unsafe fn add_button<V: ToVector + Clone, B: ToVector + Clone>(entry_id: usize, input: usize, step: V, buttons: Vec<B>, input_type: InputType, allow_negative_edge: bool, allow_extra_frame: Option<bool>, allow_c_stick_input: Option<bool>) {
 
-    if !is_input_index_safe(entry_id, input, true, "add_button") || !is_step_index_safe(entry_id, input, step, true, "add_button") { return; }
+    if !is_input_index_safe(entry_id, input, true, "add_button") { return; }
+
+    let steps = step.as_usize_vec();
+
+    if steps.len() != buttons.len() && buttons.len() != 1 { 
         
+        let crash_msg = String::from("[inputmodule::MotionInputModule::add_button] Error:\nfn has bad arguments\n\nstep len = (") + &steps.len().to_string() + ") but buttons len = " + &buttons.len().to_string() + ")\n\nbuttons should have the same length as step or 1 for it to be copyed to all steps";
+        skyline::error::show_error(89, "inputmodule error, press Details.\0", &crash_msg);
+        skyline::nn::oe::ExitApplication(); 
+
+    }
+
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
 
-    per_dir_vec[input][step].button = Some(buttons);
-    per_dir_vec[input][step].input_type = input_type;
-    per_dir_vec[input][step].allow_extra_frame = allow_extra_frame;
-    per_dir_vec[input][step].allow_negative_edge = allow_negative_edge;
-    per_dir_vec[input][step].allow_c_stick_input = allow_c_stick_input;
+    for i in 0..steps.len() {
 
+        if !is_step_index_safe(entry_id, input, steps[i], true, "add_button") { return; }
+
+        let index =
+            if buttons.len() == 1 { 0 }
+            else { i }
+        ;
+
+        per_dir_vec[input][steps[i]].button = Some(buttons[index].clone().as_int_vec());
+        per_dir_vec[input][steps[i]].input_type = input_type;
+        per_dir_vec[input][steps[i]].allow_extra_frame = allow_extra_frame;
+        per_dir_vec[input][steps[i]].allow_negative_edge = allow_negative_edge;
+        per_dir_vec[input][steps[i]].allow_c_stick_input = allow_c_stick_input;
+
+    }
 }
 
 /// Makes it so all the buttons pervided must be pressed for the input to complete
 /// 
 /// if you use this its best if you use the RAW version of the `CONTROL_PAD_BUTTON`s
-pub unsafe fn require_simultaneously_buttons(entry_id: usize, input: usize, step: usize) {
+pub unsafe fn require_simultaneously_buttons<V: ToVector>(entry_id: usize, input: usize, step: V) {
 
-    if !is_input_index_safe(entry_id, input, true, "require_simultaneously_buttons") || !is_step_index_safe(entry_id, input, step, true, "require_simultaneously_buttons") { return; }
+    if !is_input_index_safe(entry_id, input, true, "require_simultaneously_buttons") { return; }
 
-    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
+    let steps = step.as_usize_vec();
 
-    per_dir_vec[input][step].require_multiple_pressed_inputs = true;
+    for i in steps {
+
+        if !is_step_index_safe(entry_id, input, i, true, "require_simultaneously_buttons"){ return; }
+
+        let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
+
+        per_dir_vec[input][i].require_multiple_pressed_inputs = true;
+
+    }
 }
 
 /// Makes it so that if the motion is done and the buttons are not pressed or vise versa the input will reset
-pub unsafe fn add_strict(entry_id: usize, input: usize, step: usize) {
+pub unsafe fn add_strict<V: ToVector>(entry_id: usize, input: usize, step: V) {
 
-    if !is_input_index_safe(entry_id, input, true, "add_strict") || !is_step_index_safe(entry_id, input, step, true, "add_strict") { return; }
+    if !is_input_index_safe(entry_id, input, true, "add_strict") { return; }
 
-    let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
+    let steps = step.as_usize_vec();
 
-    per_dir_vec[input][step].strict = true;
+    for i in steps {
+
+        if !is_step_index_safe(entry_id, input, i, true, "add_strict") { return; }
+        let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
+
+        per_dir_vec[input][i].strict = true;
+
+    }
 }
 
 /// Sets the total amount of inputs that can be done in 1 frame
 /// 
 /// Defaults to 1 and wont allow any shortcutting
-pub unsafe fn set_max_shortcuts(entry_id: usize, input: usize, new_max_shortcuts: u8) {
+pub unsafe fn set_max_shortcuts<V: ToVector>(entry_id: usize, input: V, new_max_shortcuts: u8) {
 
-    if !is_input_index_safe(entry_id, input, true, "set_max_shortcuts") { return; }
+    let inputs = input.as_usize_vec();
 
-    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
+    for i in inputs {
+        
+        if !is_input_index_safe(entry_id, i, true, "set_max_shortcuts") { return; }
 
-    per_input_vec[input].max_shortcuts = new_max_shortcuts;
+        let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
+        per_input_vec[i].max_shortcuts = new_max_shortcuts;
+    }
 }
 
 /// Allows the input to check the next input in the series on the same frame
-pub unsafe fn allow_shortcut(entry_id: usize, input: usize, steps: Vec<usize>) {
+pub unsafe fn allow_shortcut<V: ToVector>(entry_id: usize, input: usize, step: V) {
 
     if !is_input_index_safe(entry_id, input, true, "allow_shortcut") { return; }
 
+    let steps = step.as_usize_vec();
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
     
-    for step in steps {
+    for i in steps {
 
-        if !is_step_index_safe(entry_id, input, step, true, "allow_shortcut") { return; }
+        if !is_step_index_safe(entry_id, input, i, true, "allow_shortcut") { return; }
         
-        per_dir_vec[input][step].can_shortcut = true;
+        per_dir_vec[input][i].can_shortcut = true;
 
     }
 }
@@ -385,20 +439,24 @@ pub unsafe fn get_life(module_accessor:*mut BattleObjectModuleAccessor, input: u
 }
 
 /// Returns if the given input is finished as a `bool`
-pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input: usize) -> bool {
+pub unsafe fn is_complete<V: ToVector>(module_accessor:*mut BattleObjectModuleAccessor, input: V) -> bool {
     
+    let inputs = input.as_usize_vec();
     let entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
     let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
     let per_dir_vec = &mut MOTION_INPUT_STORAGE[entry_id].1;
-    let step = per_input_vec[input].step as usize;
-    let final_step = per_dir_vec[input].len() - 1;
 
-    if !is_input_index_safe(entry_id, input, false, "is_complete") { return false; }
+    for i in 0..inputs.len() {
+        let step = per_input_vec[inputs[i]].step as usize;
+        let final_step = per_dir_vec[inputs[i]].len() - 1;
 
-    if step == final_step {
+        if !is_input_index_safe(entry_id, inputs[i], false, "is_complete") { continue; }
 
-        return true
+        if step == final_step {
 
+            return true
+
+        }
     }
 
     false
@@ -408,14 +466,17 @@ pub unsafe fn is_complete(module_accessor:*mut BattleObjectModuleAccessor, input
 /// Changes which control stick can update the motion inputs
 /// 
 /// by default its set to control_stick_only
-pub unsafe fn set_stick_type(entry_id: usize, input: usize, new_stick_type: StickType) {
+pub unsafe fn set_stick_type<V: ToVector>(entry_id: usize, input: V, new_stick_type: StickType) {
 
-    if !is_input_index_safe(entry_id, input, true, "set_stick_type") { return; }
+    let inputs = input.as_usize_vec();
+
+    for i in inputs {
+        if !is_input_index_safe(entry_id, i, true, "set_stick_type") { return; }
     
-    let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
+        let per_input_vec = &mut MOTION_INPUT_STORAGE[entry_id].0;
 
-    per_input_vec[input].stick_type = new_stick_type;
-
+        per_input_vec[i].stick_type = new_stick_type;
+    }
 }
 
 /// Updates everything in the Module for that frame 
